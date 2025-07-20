@@ -1,0 +1,397 @@
+/* HowMany Report Styles - Modern, Clean Design */
+
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    line-height: 1.6;
+    color: var(--vscode-foreground);
+    background: var(--vscode-editor-background);
+    padding: 2rem;
+    font-size: 14px;
+}
+
+/* Container and Layout */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.title {
+    font-size: 2.5rem;
+    font-weight: 300;
+    margin-bottom: 0.75rem;
+    color: var(--vscode-foreground);
+    letter-spacing: -0.02em;
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    color: var(--vscode-descriptionForeground);
+    font-weight: 400;
+}
+
+/* Grid Layout */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+/* Card Components */
+.card {
+    background: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    border-color: var(--vscode-focusBorder);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.card-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.75rem;
+    opacity: 0.8;
+    color: var(--vscode-foreground);
+}
+
+.card-icon svg {
+    width: 100%;
+    height: 100%;
+    stroke: currentColor;
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--vscode-foreground);
+}
+
+/* Metrics Display */
+.metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--vscode-widget-border);
+    transition: background-color 0.15s ease;
+}
+
+.metric:last-child {
+    border-bottom: none;
+}
+
+.metric:hover {
+    background-color: var(--vscode-list-hoverBackground);
+    margin: 0 -0.5rem;
+    padding: 0.75rem 0.5rem;
+    border-radius: 6px;
+}
+
+.metric-label {
+    color: var(--vscode-descriptionForeground);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.metric-value {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--vscode-foreground);
+}
+
+/* Quality Score Display */
+.quality-score {
+    font-size: 2.5rem;
+    font-weight: 300;
+    text-align: center;
+    margin: 1.5rem 0;
+    letter-spacing: -0.02em;
+}
+
+.quality-excellent { 
+    color: var(--vscode-charts-green);
+}
+
+.quality-good { 
+    color: var(--vscode-charts-blue);
+}
+
+.quality-warning { 
+    color: var(--vscode-charts-yellow);
+}
+
+.quality-danger { 
+    color: var(--vscode-charts-red);
+}
+
+/* Progress Bars */
+.progress-container {
+    margin-top: 0.5rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--vscode-progressBar-background);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0.5rem 0;
+}
+
+.progress-fill {
+    height: 100%;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 4px;
+}
+
+.progress-fill.quality-excellent {
+    background: var(--vscode-charts-green);
+}
+
+.progress-fill.quality-good {
+    background: var(--vscode-charts-blue);
+}
+
+.progress-fill.quality-warning {
+    background: var(--vscode-charts-yellow);
+}
+
+.progress-fill.quality-danger {
+    background: var(--vscode-charts-red);
+}
+
+/* Languages List */
+.languages-list {
+    list-style: none;
+}
+
+.language-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--vscode-widget-border);
+    transition: background-color 0.15s ease;
+}
+
+.language-item:last-child {
+    border-bottom: none;
+}
+
+.language-item:hover {
+    background-color: var(--vscode-list-hoverBackground);
+    margin: 0 -0.5rem;
+    padding: 0.75rem 0.5rem;
+    border-radius: 6px;
+}
+
+.language-name {
+    font-weight: 600;
+    color: var(--vscode-foreground);
+    font-size: 0.95rem;
+}
+
+.language-stats {
+    color: var(--vscode-descriptionForeground);
+    font-size: 0.9rem;
+    text-align: right;
+}
+
+/* Export Actions */
+.export-actions {
+    text-align: center;
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--vscode-panel-border);
+}
+
+.btn {
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin: 0 0.5rem 0.5rem 0.5rem;
+    transition: all 0.2s ease;
+    text-transform: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-icon {
+    width: 1rem;
+    height: 1rem;
+    stroke: currentColor;
+}
+
+.title-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-right: 0.5rem;
+    stroke: currentColor;
+    opacity: 0.9;
+}
+
+.btn:hover {
+    background: var(--vscode-button-hoverBackground);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn:focus {
+    outline: 2px solid var(--vscode-focusBorder);
+    outline-offset: 2px;
+}
+
+/* Loading States */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid var(--vscode-progressBar-background);
+    border-top-color: var(--vscode-charts-blue);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    body {
+        padding: 1rem;
+    }
+    
+    .grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .card {
+        padding: 1.5rem;
+    }
+    
+    .title {
+        font-size: 2rem;
+    }
+    
+    .quality-score {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 0.75rem;
+    }
+    
+    .card {
+        padding: 1rem;
+    }
+    
+    .btn {
+        display: block;
+        width: 100%;
+        margin: 0.5rem 0;
+    }
+}
+
+/* Dark Theme Enhancements */
+@media (prefers-color-scheme: dark) {
+    .card {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .card:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .card {
+        border-width: 2px;
+    }
+    
+    .btn {
+        border: 2px solid var(--vscode-button-foreground);
+    }
+}
+
+/* Accessibility Improvements */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus Styles */
+.card:focus-within {
+    outline: 2px solid var(--vscode-focusBorder);
+    outline-offset: 2px;
+}
+
+/* Animation for metric updates */
+.metric-value {
+    transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.metric-value.updated {
+    color: var(--vscode-charts-blue);
+    transform: scale(1.05);
+} 

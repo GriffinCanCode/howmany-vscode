@@ -1,0 +1,17 @@
+.vscode/**
+.vscode-test/**
+src/**/*.ts
+src/**/test/**
+src/**/suite/**
+.gitignore
+.yarnrc
+vsc-extension-quickstart.md
+**/tsconfig.json
+**/.eslintrc.json
+**/*.map
+node_modules/**
+.eslintcache
+**/.nyc_output
+**/coverage/**
+**/.vscode-test/**
+**/.DS_Store .env

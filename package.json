@@ -1,0 +1,480 @@
+{
+  "name": "howmany",
+  "displayName": "HowMany",
+  "description": "Intelligent code analysis with complexity metrics, quality scores, and development time estimates",
+  "version": "0.1.4",
+  "publisher": "GriffinCanCode",
+  "author": {
+    "name": "GriffinCanCode",
+    "email": "griffin@griffin-code.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/GriffinCanCode/howmany",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GriffinCanCode/howmany-vscode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/GriffinCanCode/howmany-vscode/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0",
+    "node": ">=18.0.0"
+  },
+  "categories": [
+    "Other",
+    "Data Science",
+    "Visualization",
+    "Testing",
+    "Linters"
+  ],
+  "keywords": [
+    "code-analysis",
+    "metrics",
+    "complexity",
+    "quality",
+    "statistics",
+    "maintainability",
+    "documentation",
+    "time-estimation",
+    "cloc",
+    "tokei",
+    "scc",
+    "lines-of-code",
+    "code-quality",
+    "technical-debt",
+    "refactoring",
+    "rust",
+    "howmany"
+  ],
+  "icon": "resources/icon.png",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "howmany.analyzeWorkspace",
+        "title": "Analyze Workspace",
+        "category": "HowMany",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "howmany.analyzeCurrentFile",
+        "title": "Analyze Current File",
+        "category": "HowMany",
+        "icon": "$(file-code)"
+      },
+      {
+        "command": "howmany.showReport",
+        "title": "Show Analysis Report",
+        "category": "HowMany",
+        "icon": "$(report)"
+      },
+      {
+        "command": "howmany.exportReport",
+        "title": "Export Report",
+        "category": "HowMany",
+        "icon": "$(export)"
+      },
+      {
+        "command": "howmany.refreshAnalysis",
+        "title": "Refresh Analysis",
+        "category": "HowMany",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "howmany.openSettings",
+        "title": "Open Settings",
+        "category": "HowMany",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "howmany.refreshView",
+        "title": "Refresh Analysis",
+        "category": "HowMany",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "howmany.refreshView",
+          "when": "view == howmanyExplorer",
+          "group": "navigation"
+        }
+      ]
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "howmanyExplorer",
+          "name": "HowMany",
+          "when": "workspaceFolderCount > 0"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "howmanyExplorer",
+        "contents": "Welcome to HowMany!\n\nAnalysis will run automatically when you open a workspace.\n\nClick the refresh button above to re-analyze, or expand items below for details."
+      }
+    ],
+    "configuration": {
+      "title": "HowMany",
+      "properties": {
+        "howmany.binaryPath": {
+          "type": "string",
+          "default": "howmany",
+          "description": "Path to the HowMany binary executable. Leave empty to use system PATH."
+        },
+        "howmany.autoAnalyze": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically analyze workspace on startup and file changes."
+        },
+        "howmany.maxDepth": {
+          "type": "number",
+          "default": 50,
+          "description": "Maximum directory depth to traverse during analysis."
+        },
+        "howmany.includeHidden": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include hidden files and directories in analysis."
+        },
+        "howmany.extensions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Specific file extensions to analyze (empty for all supported). Example: ['rs', 'py', 'js']"
+        },
+        "howmany.ignorePatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "node_modules",
+            "target",
+            "dist",
+            ".git"
+          ],
+          "description": "Additional patterns to ignore during analysis."
+        },
+        "howmany.sortBy": {
+          "type": "string",
+          "enum": [
+            "files",
+            "lines",
+            "code",
+            "comments",
+            "size"
+          ],
+          "default": "lines",
+          "description": "Default sorting criteria for analysis results."
+        },
+        "howmany.showNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notifications for analysis completion and errors."
+        },
+        "howmany.statusBar": {
+          "type": "object",
+          "properties": {
+            "display": {
+              "type": "string",
+              "enum": [
+                "lines",
+                "files",
+                "quality",
+                "auto",
+                "smart"
+              ],
+              "default": "auto",
+              "description": "What to display in status bar",
+              "enumDescriptions": [
+                "Always show line count",
+                "Always show file count",
+                "Always show quality score",
+                "Automatically choose based on project size",
+                "Intelligently choose based on project characteristics and quality"
+              ]
+            },
+            "format": {
+              "type": "string",
+              "enum": [
+                "abbreviated",
+                "full",
+                "compact"
+              ],
+              "default": "abbreviated",
+              "description": "Number formatting style",
+              "enumDescriptions": [
+                "Balanced formatting (1.2K, 1.2M) - recommended",
+                "Full numbers with commas (1,234,567)",
+                "Compact formatting (12K, 1M) - saves space"
+              ]
+            },
+            "showQualityColor": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show quality-based color coding in status bar"
+            },
+            "showIcon": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show graph icon in status bar"
+            },
+            "clickAction": {
+              "type": "string",
+              "enum": [
+                "quickActions",
+                "showReport",
+                "analyzeWorkspace"
+              ],
+              "default": "quickActions",
+              "description": "Action to perform when clicking the status bar item",
+              "enumDescriptions": [
+                "Show intelligent quick actions menu",
+                "Show analysis report (if available)",
+                "Start workspace analysis"
+              ]
+            }
+          },
+          "default": {
+            "display": "auto",
+            "format": "abbreviated",
+            "showQualityColor": true,
+            "showIcon": true,
+            "clickAction": "quickActions"
+          },
+          "description": "Status bar display configuration."
+        },
+        "howmany.webview": {
+          "type": "object",
+          "properties": {
+            "theme": {
+              "type": "string",
+              "enum": [
+                "auto",
+                "minimal",
+                "detailed"
+              ],
+              "default": "auto",
+              "description": "Webview report theme and detail level",
+              "enumDescriptions": [
+                "Automatically adapt to VS Code theme",
+                "Clean, minimal design with essential metrics",
+                "Detailed view with all available information"
+              ]
+            },
+            "animations": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enable smooth animations and transitions in reports"
+            },
+            "autoRefresh": {
+              "type": "boolean",
+              "default": false,
+              "description": "Automatically refresh report when analysis completes"
+            }
+          },
+          "default": {
+            "theme": "auto",
+            "animations": true,
+            "autoRefresh": false
+          },
+          "description": "Webview report display preferences."
+        },
+        "howmany.analysis": {
+          "type": "object",
+          "properties": {
+            "smartSuggestions": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show intelligent suggestions based on analysis results"
+            },
+            "qualityThresholds": {
+              "type": "object",
+              "properties": {
+                "overall": {
+                  "type": "number",
+                  "default": 70,
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Overall quality score threshold (0-100)"
+                },
+                "maintainability": {
+                  "type": "number",
+                  "default": 65,
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Maintainability index threshold (0-100)"
+                },
+                "documentation": {
+                  "type": "number",
+                  "default": 20,
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Documentation coverage threshold (0-100)"
+                },
+                "complexity": {
+                  "type": "number",
+                  "default": 10,
+                  "minimum": 1,
+                  "maximum": 50,
+                  "description": "Maximum average complexity per function"
+                }
+              },
+              "default": {
+                "overall": 70,
+                "maintainability": 65,
+                "documentation": 20,
+                "complexity": 10
+              },
+              "description": "Quality thresholds for analysis evaluation"
+            }
+          },
+          "default": {
+            "smartSuggestions": true,
+            "qualityThresholds": {
+              "overall": 70,
+              "maintainability": 65,
+              "documentation": 20,
+              "complexity": 10
+            }
+          },
+          "description": "Analysis behavior and quality thresholds."
+        },
+        "howmany.notifications": {
+          "type": "object",
+          "properties": {
+            "showCompletion": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show notification when analysis completes"
+            },
+            "showErrors": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show notification when analysis fails"
+            },
+            "showQualityWarnings": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show notifications for quality issues"
+            }
+          },
+          "default": {
+            "showCompletion": true,
+            "showErrors": true,
+            "showQualityWarnings": true
+          },
+          "description": "Notification preferences."
+        },
+        "howmany.qualityThresholds": {
+          "type": "object",
+          "properties": {
+            "overall": {
+              "type": "number",
+              "default": 70,
+              "description": "Overall quality score threshold (0-100)"
+            },
+            "maintainability": {
+              "type": "number",
+              "default": 65,
+              "description": "Maintainability index threshold (0-100)"
+            },
+            "documentation": {
+              "type": "number",
+              "default": 20,
+              "description": "Documentation coverage threshold (0-100)"
+            },
+            "complexity": {
+              "type": "number",
+              "default": 10,
+              "description": "Maximum average complexity per function"
+            }
+          },
+          "default": {
+            "overall": 70,
+            "maintainability": 65,
+            "documentation": 20,
+            "complexity": 10
+          },
+          "description": "Quality thresholds for analysis evaluation."
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "howmany.analyzeWorkspace",
+        "key": "ctrl+shift+h ctrl+w",
+        "mac": "cmd+shift+h cmd+w"
+      },
+      {
+        "command": "howmany.analyzeCurrentFile",
+        "key": "ctrl+shift+h ctrl+f",
+        "mac": "cmd+shift+h cmd+f"
+      },
+      {
+        "command": "howmany.showReport",
+        "key": "ctrl+shift+h ctrl+r",
+        "mac": "cmd+shift+h cmd+r"
+      }
+    ],
+    "statusBar": [
+      {
+        "id": "howmany.status",
+        "name": "HowMany Status",
+        "alignment": "right",
+        "priority": 100
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "lint:fix": "eslint src --ext ts --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "test": "node ./dist/test/runTest.js",
+    "package": "vsce package --no-dependencies",
+    "package:pre-release": "vsce package --pre-release --no-dependencies",
+    "publish": "vsce publish --no-dependencies",
+    "publish:pre-release": "vsce publish --pre-release --no-dependencies",
+    "deploy": "npm run package && npm run publish",
+    "install:local": "code --install-extension howmany-0.1.3.vsix",
+    "clean": "rimraf dist *.vsix",
+    "verify": "node verify-marketplace-ready.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "@vscode/test-electron": "^2.3.0",
+    "@vscode/vsce": "^2.21.0",
+    "eslint": "^8.50.0",
+    "mocha": "^11.7.1",
+    "prettier": "^3.1.0",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.2.0"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.0",
+    "d3": "^7.8.5"
+  }
+}

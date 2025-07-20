@@ -1,0 +1,40 @@
+{
+    "root": true,
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+        "ecmaVersion": 2020,
+        "sourceType": "module"
+    },
+    "plugins": [
+        "@typescript-eslint"
+    ],
+    "extends": [
+        "eslint:recommended"
+    ],
+    "env": {
+        "node": true,
+        "es6": true,
+        "mocha": true
+    },
+    "globals": {
+        "Thenable": "readonly",
+        "suite": "readonly",
+        "test": "readonly"
+    },
+    "rules": {
+        "@typescript-eslint/semi": "off",
+        "semi": "warn",
+        "curly": "off",
+        "eqeqeq": "warn",
+        "no-throw-literal": "warn",
+        "no-unused-vars": "off",
+        "no-console": "off",
+        "no-case-declarations": "off"
+    },
+    "ignorePatterns": [
+        "dist",
+        "node_modules",
+        ".vscode-test",
+        "*.d.ts"
+    ]
+} 
