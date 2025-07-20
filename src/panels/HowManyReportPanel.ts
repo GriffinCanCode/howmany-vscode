@@ -37,14 +37,14 @@ export class HowManyReportPanel {
                 enableScripts: true,
                 retainContextWhenHidden: true,
                 localResourceRoots: [
-                    vscode.Uri.joinPath(extensionUri || vscode.extensions.getExtension('howmany.howmany-vscode')?.extensionUri!, 'src', 'styles')
+                    vscode.Uri.joinPath(extensionUri || vscode.extensions.getExtension('GriffinCanCode.howmany')?.extensionUri!, 'src', 'styles')
                 ]
             }
         );
 
         HowManyReportPanel.currentPanel = new HowManyReportPanel(
             panel, 
-            extensionUri || vscode.extensions.getExtension('howmany.howmany-vscode')?.extensionUri!, 
+            extensionUri || vscode.extensions.getExtension('GriffinCanCode.howmany')?.extensionUri!, 
             result
         );
     }
@@ -94,7 +94,6 @@ export class HowManyReportPanel {
             ${this.generateOverviewCard(result)}
             ${this.generateQualityCard(result)}
             ${this.generateLanguagesCard(result)}
-            ${this.generateTimeCard(result)}
         </main>
         
 
@@ -214,31 +213,7 @@ export class HowManyReportPanel {
             </section>`;
     }
 
-    private generateTimeCard(result: HowManyResult): string {
-        if (!result.time) {
-            return '';
-        }
 
-        return `
-            <section class="card" role="region" aria-labelledby="time-title">
-                <header class="card-header">
-                    <span class="card-icon" aria-hidden="true">${Icons.clock}</span>
-                    <h2 class="card-title" id="time-title">Development Time</h2>
-                </header>
-                <div class="metric">
-                    <span class="metric-label">Total Time</span>
-                    <span class="metric-value">${result.time.total_time_formatted}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Code Writing</span>
-                    <span class="metric-value">${result.time.code_time_formatted}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Documentation</span>
-                    <span class="metric-value">${result.time.doc_time_formatted}</span>
-                </div>
-            </section>`;
-    }
 
     private getQualityClass(score: number): string {
         if (score >= 85) return 'quality-excellent';

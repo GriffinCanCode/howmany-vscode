@@ -1,8 +1,8 @@
 {
   "name": "howmany",
   "displayName": "HowMany",
-  "description": "Intelligent code analysis with complexity metrics, quality scores, and development time estimates",
-  "version": "0.1.4",
+  "description": "Intelligent code analysis with complexity metrics and quality scores",
+  "version": "1.0.0",
   "publisher": "GriffinCanCode",
   "author": {
     "name": "GriffinCanCode",
@@ -36,7 +36,7 @@
     "statistics",
     "maintainability",
     "documentation",
-    "time-estimation",
+
     "cloc",
     "tokei",
     "scc",

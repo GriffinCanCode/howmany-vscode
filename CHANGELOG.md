@@ -5,6 +5,23 @@ All notable changes to the HowMany VS Code Extension will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2025-01-20
+
+### 🎉 Major Release
+- **MILESTONE**: First stable release of HowMany VS Code Extension
+- **ADDED**: Screenshots in README showing CLI and VS Code integration
+- **REMOVED**: Development Time estimation metric from all reports and displays
+- **SIMPLIFIED**: Focus on core code analysis without time estimates
+- **UPDATED**: Extension description and documentation to reflect streamlined functionality
+- **STABLE**: All core features tested and ready for production use
+
+## [0.1.5] - 2025-01-20
+
+### 🔧 Bug Fixes
+- **FIXED**: Extension ID reference error causing "Cannot read properties of undefined (reading 'path')" error
+- **IMPROVED**: Status bar icon changed to dashboard icon for better visual representation
+- **UPDATED**: All internal extension references to use correct publisher.name format (GriffinCanCode.howmany)
+
 ## [0.1.4] - 2025-01-20
 
 ### 📝 Documentation Update

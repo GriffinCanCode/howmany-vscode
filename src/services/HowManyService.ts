@@ -260,14 +260,7 @@ export class HowManyService {
         <p>Readability: ${quality.readability_score.toFixed(1)}%</p>
     </div>
     ` : ''}
-    ${result.time ? `
-    <div class="metric">
-        <h3>⏱️ Development Time</h3>
-        <p>Total Time: ${result.time.total_time_formatted}</p>
-        <p>Code Time: ${result.time.code_time_formatted}</p>
-        <p>Documentation Time: ${result.time.doc_time_formatted}</p>
-    </div>
-    ` : ''}
+
 </body>
 </html>`;
     }
@@ -296,13 +289,7 @@ export class HowManyService {
             );
         }
 
-        if (result.time) {
-            rows.push(
-                ['Total Time', result.time.total_time_formatted],
-                ['Code Time', result.time.code_time_formatted],
-                ['Documentation Time', result.time.doc_time_formatted]
-            );
-        }
+
 
         return rows.map(row => row.join(',')).join('\n');
     }

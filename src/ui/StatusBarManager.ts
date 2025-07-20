@@ -9,7 +9,7 @@ export class StatusBarManager implements vscode.Disposable {
     private statusBarItem: vscode.StatusBarItem;
     private config: ExtensionConfig;
     private lastResult: HowManyResult | null = null;
-    private readonly HOWMANY_ICON = '?';
+    private readonly HOWMANY_ICON = '$(dashboard)';
 
     constructor(config: ExtensionConfig) {
         this.config = config;

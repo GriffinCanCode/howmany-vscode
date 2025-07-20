@@ -5,11 +5,11 @@ suite('HowMany Extension Test Suite', () => {
     vscode.window.showInformationMessage('Start all tests.');
 
     test('Extension should be present', () => {
-        assert.ok(vscode.extensions.getExtension('howmany.howmany-vscode'));
+        assert.ok(vscode.extensions.getExtension('GriffinCanCode.howmany'));
     });
 
     test('Extension should activate', async () => {
-        const extension = vscode.extensions.getExtension('howmany.howmany-vscode');
+        const extension = vscode.extensions.getExtension('GriffinCanCode.howmany');
         assert.ok(extension);
         
         if (extension && !extension.isActive) {

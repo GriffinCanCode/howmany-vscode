@@ -51,7 +51,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                     viewProvider.updateResult(result);
                     
                     // Update the report panel if it's currently open
-                    const extension = vscode.extensions.getExtension('howmany.howmany-vscode');
+                    const extension = vscode.extensions.getExtension('GriffinCanCode.howmany');
                     if (HowManyReportPanel.isOpen()) {
                         HowManyReportPanel.createOrShow(result, extension?.extensionUri);
                     }
@@ -171,7 +171,7 @@ async function analyzeWorkspace(): Promise<void> {
             viewProvider.updateResult(result);
             
             // Automatically open the report
-            const extension = vscode.extensions.getExtension('howmany.howmany-vscode');
+            const extension = vscode.extensions.getExtension('GriffinCanCode.howmany');
             HowManyReportPanel.createOrShow(result, extension?.extensionUri);
             
             if (loadConfiguration().showNotifications) {
@@ -206,7 +206,7 @@ async function analyzeCurrentFile(): Promise<void> {
             viewProvider.updateResult(result);
             
             // Automatically open the report
-            const extension = vscode.extensions.getExtension('howmany.howmany-vscode');
+            const extension = vscode.extensions.getExtension('GriffinCanCode.howmany');
             HowManyReportPanel.createOrShow(result, extension?.extensionUri);
             
             if (loadConfiguration().showNotifications) {
@@ -238,7 +238,7 @@ async function showReport(): Promise<void> {
     }
 
     // Get the extension context to pass the extensionUri
-    const extension = vscode.extensions.getExtension('howmany.howmany-vscode');
+    const extension = vscode.extensions.getExtension('GriffinCanCode.howmany');
     HowManyReportPanel.createOrShow(result, extension?.extensionUri);
 }
 

@@ -1,16 +1,21 @@
 # HowMany VS Code Extension
 
-**Intelligent code analysis with complexity metrics, quality scores, and development time estimates**
+**Intelligent code analysis with complexity metrics and quality scores**
 
 A VS Code extension that integrates with the [HowMany](https://github.com/GriffinCanCode/howmany) code analysis tool to provide real-time insights into your codebase.
+
+## Screenshots
 
 ## What It Does
 
 - **Status Bar Integration**: Shows live metrics (lines of code, file count, or quality score) in your VS Code status bar
 - **Interactive Reports**: Generate detailed analysis reports with quality metrics, complexity scores, and language breakdowns
 - **Quality Assessment**: Evaluate code maintainability, documentation coverage, and technical debt
-- **Time Estimation**: Calculate development time estimates based on code volume and complexity
+
 - **Multi-Language Support**: Analyze 25+ programming languages with intelligent file detection
+
+![HowMany VS Code Extension](resources/vscode.png)
+
 
 ## Why Use It
 
@@ -19,6 +24,8 @@ A VS Code extension that integrates with the [HowMany](https://github.com/Griffi
 - **Project Understanding**: Quickly assess unfamiliar codebases
 - **Technical Debt**: Quantify maintainability issues before they become problems
 - **Team Alignment**: Share consistent quality metrics across development teams
+
+![HowMany CLI](resources/cli.png)
 
 ## Installation
 
