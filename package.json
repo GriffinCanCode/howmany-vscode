@@ -2,7 +2,7 @@
   "name": "howmany",
   "displayName": "HowMany",
   "description": "Intelligent code analysis with complexity metrics and quality scores",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "publisher": "GriffinCanCode",
   "author": {
     "name": "GriffinCanCode",
@@ -180,6 +180,68 @@
           ],
           "default": "lines",
           "description": "Default sorting criteria for analysis results."
+        },
+        "howmany.useCliMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use CLI mode for faster analysis with basic output."
+        },
+        "howmany.minLines": {
+          "type": "number",
+          "description": "Minimum lines per file to include in analysis."
+        },
+        "howmany.maxLines": {
+          "type": "number",
+          "description": "Maximum lines per file to include in analysis."
+        },
+        "howmany.minSize": {
+          "type": "number",
+          "description": "Minimum file size in bytes to include in analysis."
+        },
+        "howmany.maxSize": {
+          "type": "number",
+          "description": "Maximum file size in bytes to include in analysis."
+        },
+        "howmany.onlyLanguages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Include only these languages in analysis. Example: ['rs', 'py', 'js']"
+        },
+        "howmany.excludeLanguages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Exclude these languages from analysis. Example: ['md', 'txt', 'json']"
+        },
+        "howmany.showComplexity": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show complexity information in CLI mode output."
+        },
+        "howmany.showQuality": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show quality scores in CLI mode output."
+        },
+        "howmany.showTime": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show time estimates in CLI mode output."
+        },
+        "howmany.showRatios": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show code ratios in CLI mode output."
+        },
+        "howmany.showSize": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show size information in CLI mode output."
         },
         "howmany.showNotifications": {
           "type": "boolean",

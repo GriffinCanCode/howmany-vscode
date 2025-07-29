@@ -115,28 +115,6 @@ export interface ComplexityStats {
 }
 
 /**
- * Time statistics from core
- */
-export interface TimeStats {
-    /** Total time in minutes */
-    total_time_minutes: number;
-    /** Code writing time in minutes */
-    code_time_minutes: number;
-    /** Documentation time in minutes */
-    doc_time_minutes: number;
-    /** Comment writing time in minutes */
-    comment_time_minutes: number;
-    /** Formatted total time string */
-    total_time_formatted: string;
-    /** Formatted code time string */
-    code_time_formatted: string;
-    /** Formatted doc time string */
-    doc_time_formatted: string;
-    /** Formatted comment time string */
-    comment_time_formatted: string;
-}
-
-/**
  * Ratio statistics from core
  */
 export interface RatioStats {
@@ -177,16 +155,14 @@ export interface StatsMetadata {
 }
 
 /**
- * Complete analysis result from HowMany core (AggregatedStats)
+ * Main result interface from core
  */
 export interface HowManyResult {
-    /** Basic code statistics */
+    /** Basic statistics */
     basic: BasicStats;
-    /** Complexity metrics */
+    /** Complexity analysis results */
     complexity: ComplexityStats;
-    /** Time estimates */
-    time: TimeStats;
-    /** Ratio statistics */
+    /** Ratio analysis results */
     ratios: RatioStats;
     /** Analysis metadata */
     metadata: StatsMetadata;
@@ -320,6 +296,29 @@ export interface ExtensionConfig {
     ignorePatterns: string[];
     /** Default sorting criteria */
     sortBy: SortCriteria;
+    
+    // New filtering options
+    /** Use CLI mode for faster analysis */
+    useCliMode: boolean;
+    /** Minimum lines per file to include */
+    minLines?: number;
+    /** Maximum lines per file to include */
+    maxLines?: number;
+    /** Minimum file size to include (in bytes) */
+    minSize?: number;
+    /** Maximum file size to include (in bytes) */
+    maxSize?: number;
+    /** Include only these languages */
+    onlyLanguages: string[];
+    /** Exclude these languages */
+    excludeLanguages: string[];
+    /** Show enhanced CLI output options */
+    showComplexity: boolean;
+    showQuality: boolean;
+    showTime: boolean;
+    showRatios: boolean;
+    showSize: boolean;
+    
     /** Legacy notification setting (deprecated) */
     showNotifications: boolean;
     /** Status bar configuration */
@@ -377,31 +376,12 @@ export function getQualityMetrics(result: HowManyResult): QualityMetrics | undef
 }
 
 /**
- * Type guard to check if time stats are available (always available in new structure)
- */
-export function hasTimeStats(result: HowManyResult): boolean {
-    return result.time !== undefined;
-}
-
-/**
- * Convert new TimeStats to legacy format (hours instead of minutes)
- */
-export function toLegacyTimeStats(timeStats: TimeStats): { total_development_time_hours: number; code_writing_time_hours: number; documentation_time_hours: number } {
-    return {
-        total_development_time_hours: timeStats.total_time_minutes / 60,
-        code_writing_time_hours: timeStats.code_time_minutes / 60,
-        documentation_time_hours: timeStats.doc_time_minutes / 60,
-    };
-}
-
-/**
  * Convert HowManyResult to legacy format for backward compatibility
  */
 export function toLegacyResult(result: HowManyResult, analysisPath: string): LegacyHowManyResult {
     return {
         basic: result.basic,
         quality: result.ratios?.quality_metrics,
-        time: result.time ? toLegacyTimeStats(result.time) : undefined,
         analysis_timestamp: result.metadata.timestamp,
         analysis_path: analysisPath,
     };

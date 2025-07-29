@@ -114,6 +114,21 @@ function loadConfiguration(): ExtensionConfig {
         extensions: config.get('extensions', []),
         ignorePatterns: config.get('ignorePatterns', ['node_modules', 'target', 'dist', '.git']),
         sortBy: config.get('sortBy', 'lines'),
+        
+        // New filtering options
+        useCliMode: config.get('useCliMode', false),
+        minLines: config.get('minLines'),
+        maxLines: config.get('maxLines'),
+        minSize: config.get('minSize'),
+        maxSize: config.get('maxSize'),
+        onlyLanguages: config.get('onlyLanguages', []),
+        excludeLanguages: config.get('excludeLanguages', []),
+        showComplexity: config.get('showComplexity', false),
+        showQuality: config.get('showQuality', false),
+        showTime: config.get('showTime', false),
+        showRatios: config.get('showRatios', false),
+        showSize: config.get('showSize', false),
+        
         showNotifications: config.get('showNotifications', true),
         statusBar: {
             display: config.get('statusBar.display', 'auto'),

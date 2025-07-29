@@ -106,13 +106,30 @@ export class HowManyService {
      * Build command line arguments for howmany
      */
     private buildAnalysisArgs(targetPath: string): string[] {
-        const args = ['--output', 'json', '--no-interactive'];
+        const args: string[] = [];
 
         // Add target path (can be omitted for current directory)
         if (targetPath && targetPath !== '.') {
-            args.unshift(targetPath);
+            args.push(targetPath);
         }
 
+        // CLI mode or JSON output
+        if (this.config.useCliMode) {
+            args.push('--cli');
+            
+            // Enhanced CLI output options
+            if (this.config.showComplexity) args.push('--show-complexity');
+            if (this.config.showQuality) args.push('--show-quality');
+            if (this.config.showTime) args.push('--show-time');
+            if (this.config.showRatios) args.push('--show-ratios');
+            if (this.config.showSize) args.push('--show-size');
+        } else {
+            args.push('--output', 'json');
+        }
+        
+        args.push('--no-interactive');
+
+        // Basic options
         if (this.config.maxDepth && this.config.maxDepth > 0) {
             args.push('--depth', this.config.maxDepth.toString());
         }
@@ -131,6 +148,31 @@ export class HowManyService {
 
         if (this.config.sortBy) {
             args.push('--sort', this.config.sortBy);
+        }
+
+        // New filtering options
+        if (this.config.minLines) {
+            args.push('--min-lines', this.config.minLines.toString());
+        }
+
+        if (this.config.maxLines) {
+            args.push('--max-lines', this.config.maxLines.toString());
+        }
+
+        if (this.config.minSize) {
+            args.push('--min-size', this.config.minSize.toString());
+        }
+
+        if (this.config.maxSize) {
+            args.push('--max-size', this.config.maxSize.toString());
+        }
+
+        if (this.config.onlyLanguages && this.config.onlyLanguages.length > 0) {
+            args.push('--only', this.config.onlyLanguages.join(','));
+        }
+
+        if (this.config.excludeLanguages && this.config.excludeLanguages.length > 0) {
+            args.push('--exclude', this.config.excludeLanguages.join(','));
         }
 
         return args;
@@ -160,10 +202,16 @@ export class HowManyService {
                 }
 
                 try {
-                    // Clean the output - remove any non-JSON lines
-                    const cleanOutput = this.cleanJsonOutput(stdout);
-                    const result = JSON.parse(cleanOutput) as HowManyResult;
-                    resolve(result);
+                    if (this.config.useCliMode) {
+                        // Parse CLI output
+                        const result = this.parseCliOutput(stdout);
+                        resolve(result);
+                    } else {
+                        // Clean the output - remove any non-JSON lines
+                        const cleanOutput = this.cleanJsonOutput(stdout);
+                        const result = JSON.parse(cleanOutput) as HowManyResult;
+                        resolve(result);
+                    }
                 } catch (error) {
                     reject(new Error(`Failed to parse HowMany output: ${error}\n\nRaw output:\n${stdout}`));
                 }
@@ -218,6 +266,39 @@ export class HowManyService {
 
         // If we can't find clean JSON, return the original output
         return output;
+    }
+
+    /**
+     * Parse CLI mode output to create a basic HowManyResult
+     */
+    private parseCliOutput(output: string): HowManyResult {
+        const lines = output.trim().split('\n');
+        const lastLine = lines[lines.length - 1];
+        const match = lastLine.match(/(\d+)\s+files,\s+(\d+)\s+lines/);
+        
+        if (!match) {
+            throw new Error('Failed to parse CLI output format');
+        }
+        
+        // Create a minimal result object for CLI mode
+        const result = {
+            basic: {
+                total_files: parseInt(match[1]),
+                total_lines: parseInt(match[2]),
+                code_lines: 0,
+                comment_lines: 0,
+                doc_lines: 0,
+                blank_lines: 0,
+                total_size: 0,
+                average_file_size: 0,
+                average_lines_per_file: 0,
+                largest_file_size: 0,
+                smallest_file_size: 0,
+                stats_by_extension: {}
+            }
+        } as unknown as HowManyResult;
+        
+        return result;
     }
 
     /**
