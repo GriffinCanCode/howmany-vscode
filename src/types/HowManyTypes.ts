@@ -315,7 +315,6 @@ export interface ExtensionConfig {
     /** Show enhanced CLI output options */
     showComplexity: boolean;
     showQuality: boolean;
-    showTime: boolean;
     showRatios: boolean;
     showSize: boolean;
     

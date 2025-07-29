@@ -226,12 +226,7 @@
         "howmany.showQuality": {
           "type": "boolean",
           "default": false,
-          "description": "Show quality scores in CLI mode output."
-        },
-        "howmany.showTime": {
-          "type": "boolean",
-          "default": false,
-          "description": "Show time estimates in CLI mode output."
+          "description": "Show quality scores in CLI output"
         },
         "howmany.showRatios": {
           "type": "boolean",

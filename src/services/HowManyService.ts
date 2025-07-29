@@ -120,7 +120,6 @@ export class HowManyService {
             // Enhanced CLI output options
             if (this.config.showComplexity) args.push('--show-complexity');
             if (this.config.showQuality) args.push('--show-quality');
-            if (this.config.showTime) args.push('--show-time');
             if (this.config.showRatios) args.push('--show-ratios');
             if (this.config.showSize) args.push('--show-size');
         } else {

@@ -125,7 +125,6 @@ function loadConfiguration(): ExtensionConfig {
         excludeLanguages: config.get('excludeLanguages', []),
         showComplexity: config.get('showComplexity', false),
         showQuality: config.get('showQuality', false),
-        showTime: config.get('showTime', false),
         showRatios: config.get('showRatios', false),
         showSize: config.get('showSize', false),
         
