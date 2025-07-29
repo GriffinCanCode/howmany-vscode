@@ -2,7 +2,7 @@
   "name": "howmany",
   "displayName": "HowMany",
   "description": "Intelligent code analysis with complexity metrics and quality scores",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "publisher": "GriffinCanCode",
   "author": {
     "name": "GriffinCanCode",
