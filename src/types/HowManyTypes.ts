@@ -93,13 +93,50 @@ export interface QualityMetrics {
 }
 
 /**
+ * Distribution of functions across complexity bands
+ */
+export interface ComplexityDistribution {
+    very_low_complexity: number;
+    low_complexity: number;
+    medium_complexity: number;
+    high_complexity: number;
+    very_high_complexity: number;
+}
+
+/**
+ * Counts of each declared structure kind
+ */
+export interface StructureDistribution {
+    classes: number;
+    interfaces: number;
+    traits: number;
+    enums: number;
+    structs: number;
+    modules: number;
+}
+
+/**
  * Complexity statistics from core
+ *
+ * The JSON pipeline can return this block fully zeroed when structural
+ * analysis did not run, so every consumer must treat it as advisory and
+ * gate on {@link hasStructuralData} before rendering it.
  */
 export interface ComplexityStats {
     /** Number of functions */
     function_count: number;
     /** Number of classes */
     class_count: number;
+    /** Number of interfaces */
+    interface_count?: number;
+    /** Number of traits */
+    trait_count?: number;
+    /** Number of enums */
+    enum_count?: number;
+    /** Number of structs */
+    struct_count?: number;
+    /** Number of modules */
+    module_count?: number;
     /** Total code structures */
     total_structures: number;
     /** Cyclomatic complexity average */
@@ -108,10 +145,36 @@ export interface ComplexityStats {
     cognitive_complexity: number;
     /** Maintainability index */
     maintainability_index: number;
+    /** Average function length in lines */
+    average_function_length?: number;
+    /** Longest function in lines */
+    max_function_length?: number;
     /** Maximum nesting depth */
     max_nesting_depth: number;
     /** Average nesting depth */
     average_nesting_depth: number;
+    /** Average methods per class */
+    methods_per_class?: number;
+    /** Average parameters per function */
+    average_parameters_per_function?: number;
+    /** Functions bucketed by complexity band */
+    complexity_distribution?: ComplexityDistribution;
+    /** Declared structures by kind */
+    structure_distribution?: StructureDistribution;
+}
+
+/**
+ * Per-extension ratio breakdown
+ */
+export interface ExtensionRatios {
+    code_ratio: number;
+    comment_ratio: number;
+    doc_ratio: number;
+    blank_ratio: number;
+    comment_to_code_ratio: number;
+    doc_to_code_ratio: number;
+    lines_per_file: number;
+    size_per_file: number;
 }
 
 /**
@@ -130,6 +193,14 @@ export interface RatioStats {
     comment_to_code_ratio: number;
     /** Documentation to code ratio */
     doc_to_code_ratio: number;
+    /** Ratio breakdown per file extension */
+    ratios_by_extension?: Record<string, ExtensionRatios>;
+    /** Percentage of total lines per language */
+    language_distribution?: Record<string, number>;
+    /** Percentage of total files per language */
+    file_distribution?: Record<string, number>;
+    /** Percentage of total bytes per language */
+    size_distribution?: Record<string, number>;
     /** Quality metrics */
     quality_metrics: QualityMetrics;
 }
@@ -365,6 +436,19 @@ export type PartialExtensionConfig = Partial<ExtensionConfig>;
  */
 export function hasQualityMetrics(result: HowManyResult): boolean {
     return result.ratios?.quality_metrics !== undefined;
+}
+
+/**
+ * Whether structural analysis actually produced counts.
+ *
+ * The complexity block is always present in JSON output but arrives fully
+ * zeroed when no parser contributed structures, which is indistinguishable
+ * from "a project with no functions". Callers use this to hide the section
+ * rather than render a wall of zeros.
+ */
+export function hasStructuralData(result: HowManyResult): boolean {
+    const complexity = result.complexity;
+    return !!complexity && (complexity.total_structures > 0 || complexity.function_count > 0);
 }
 
 /**

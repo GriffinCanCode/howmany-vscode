@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { HowManyService } from './services/HowManyService';
 import { HowManyReportPanel } from './panels/HowManyReportPanel';
 import { StatusBarManager } from './ui/StatusBarManager';
@@ -8,6 +9,35 @@ import { HowManyResult, ExtensionConfig, QuickAction } from './types/HowManyType
 let service: HowManyService;
 let statusBar: StatusBarManager;
 let viewProvider: HowManyViewProvider;
+let treeView: vscode.TreeView<unknown> | undefined;
+
+/** Keeps the sidebar header, status bar, tree and report on one shared state. */
+function publishResult(result: HowManyResult, scope: string, reveal: boolean): void {
+    statusBar.updateWithResult(result);
+    viewProvider.updateResult(result);
+    if (treeView) treeView.description = viewProvider.headerDescription;
+
+    const extensionUri = vscode.extensions.getExtension('GriffinCanCode.howmany')?.extensionUri;
+    if (reveal) {
+        HowManyReportPanel.createOrShow(result, extensionUri, scope);
+    } else {
+        HowManyReportPanel.refreshIfOpen(result, scope);
+    }
+}
+
+function publishAnalyzing(): void {
+    statusBar.showAnalyzing();
+    viewProvider.setAnalyzing(true);
+    if (treeView) treeView.description = viewProvider.headerDescription;
+    HowManyReportPanel.setAnalyzing(true);
+}
+
+function publishFailure(): void {
+    statusBar.showError();
+    viewProvider.setFailed();
+    if (treeView) treeView.description = undefined;
+    HowManyReportPanel.setAnalyzing(false);
+}
 
 /**
  * Extension activation
@@ -25,10 +55,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     // Initialize tree view provider
     viewProvider = new HowManyViewProvider();
-    const treeView = vscode.window.createTreeView('howmanyExplorer', {
+    treeView = vscode.window.createTreeView('howmanyExplorer', {
         treeDataProvider: viewProvider,
         showCollapseAll: false,
     });
+    context.subscriptions.push(treeView);
 
     // Add refresh command to tree view
     vscode.commands.registerCommand('howmany.refreshView', () => {
@@ -42,26 +73,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         setTimeout(async () => {
             try {
                 console.log('Auto-analyzing workspace on startup...');
-                statusBar.showAnalyzing();
-                viewProvider.setAnalyzing(true);
+                publishAnalyzing();
 
                 const result = await service.analyzeWorkspace(workspaceFolder.uri.fsPath);
                 if (result) {
-                    statusBar.updateWithResult(result);
-                    viewProvider.updateResult(result);
-
-                    // Update the report panel if it's currently open
-                    const extension = vscode.extensions.getExtension('GriffinCanCode.howmany');
-                    if (HowManyReportPanel.isOpen()) {
-                        HowManyReportPanel.createOrShow(result, extension?.extensionUri);
-                    }
-
+                    // Startup is not a request to see the report, only to have
+                    // the numbers ready.
+                    publishResult(result, workspaceFolder.name, false);
                     console.log('✅ Auto-analysis completed');
                 }
             } catch (error) {
                 console.log('❌ Auto-analysis failed:', error);
-                statusBar.showError();
-                viewProvider.setAnalyzing(false);
+                publishFailure();
             }
         }, 1000); // 1 second delay to let VS Code fully load
     }
@@ -166,8 +189,11 @@ function loadConfiguration(): ExtensionConfig {
 
 /**
  * Analyze workspace command
+ *
+ * `reveal` distinguishes an explicit request to see the report from a
+ * background refresh, which must not take over the editor.
  */
-async function analyzeWorkspace(): Promise<void> {
+async function analyzeWorkspace(reveal = true): Promise<void> {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (!workspaceFolder) {
         vscode.window.showErrorMessage('No workspace folder is open');
@@ -175,18 +201,12 @@ async function analyzeWorkspace(): Promise<void> {
     }
 
     try {
-        statusBar.showAnalyzing();
-        viewProvider.setAnalyzing(true);
+        publishAnalyzing();
 
         const result = await service.analyzeWorkspace(workspaceFolder.uri.fsPath);
 
         if (result) {
-            statusBar.updateWithResult(result);
-            viewProvider.updateResult(result);
-
-            // Automatically open the report
-            const extension = vscode.extensions.getExtension('GriffinCanCode.howmany');
-            HowManyReportPanel.createOrShow(result, extension?.extensionUri);
+            publishResult(result, workspaceFolder.name, reveal);
 
             if (loadConfiguration().showNotifications) {
                 const message = `Analysis complete: ${result.basic.total_files} files, ${formatNumber(result.basic.total_lines)} lines`;
@@ -194,8 +214,7 @@ async function analyzeWorkspace(): Promise<void> {
             }
         }
     } catch (error) {
-        statusBar.showError();
-        viewProvider.setAnalyzing(false);
+        publishFailure();
         vscode.window.showErrorMessage(`Analysis failed: ${error}`);
     }
 }
@@ -211,25 +230,18 @@ async function analyzeCurrentFile(): Promise<void> {
     }
 
     try {
-        statusBar.showAnalyzing();
-        viewProvider.setAnalyzing(true);
+        publishAnalyzing();
         const result = await service.analyzeCurrentFile(editor.document.uri.fsPath);
         if (result) {
-            statusBar.updateWithResult(result);
-            viewProvider.updateResult(result);
-
-            // Automatically open the report
-            const extension = vscode.extensions.getExtension('GriffinCanCode.howmany');
-            HowManyReportPanel.createOrShow(result, extension?.extensionUri);
+            publishResult(result, path.basename(editor.document.fileName), true);
 
             if (loadConfiguration().showNotifications) {
-                const message = `Analysis complete for ${editor.document.fileName}: ${result.basic.total_lines} lines`;
+                const message = `Analysis complete for ${path.basename(editor.document.fileName)}: ${result.basic.total_lines} lines`;
                 vscode.window.showInformationMessage(message);
             }
         }
     } catch (error) {
-        statusBar.showError();
-        viewProvider.setAnalyzing(false);
+        publishFailure();
         vscode.window.showErrorMessage(`Analysis failed: ${error}`);
     }
 }
@@ -285,10 +297,10 @@ async function exportReport(): Promise<void> {
 }
 
 /**
- * Refresh analysis
+ * Refresh analysis in place, leaving window layout and focus untouched.
  */
 async function refreshAnalysis(): Promise<void> {
-    await analyzeWorkspace();
+    await analyzeWorkspace(false);
 }
 
 /**

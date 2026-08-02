@@ -27,7 +27,7 @@ howmany-vscode/
 │
 ├── 📚 Documentation
 │   ├── README.md                 # Main documentation
-│   └── STRUCTURE.md             # This file
+│   └── docs/structure.md        # This file
 │
 └── 🔧 Development
     └── node_modules/            # Dependencies (generated)

@@ -1,0 +1,1360 @@
+/*
+ * HowMany report.
+ *
+ * The design system here is VS Code's own: every colour resolves from a
+ * --vscode-* token, so the report is correct in any theme the user has
+ * installed rather than in two hand-picked ones. Colour is reserved for data
+ * encoding; all chrome is neutral and derived from the foreground colour via
+ * color-mix, which keeps hairlines legible on light and dark backgrounds alike.
+ *
+ * Shape rule: surfaces 6px, data marks 3px, pills only on the segmented
+ * control. Nothing else is rounded.
+ */
+
+/* ---------------------------------------------------------------- tokens */
+
+:root {
+    --hm-fg: var(--vscode-foreground);
+    --hm-dim: var(
+        --vscode-descriptionForeground,
+        color-mix(in srgb, var(--vscode-foreground) 65%, transparent)
+    );
+    --hm-bg: var(--vscode-editor-background);
+
+    --hm-line: color-mix(in srgb, var(--hm-fg) 14%, transparent);
+    --hm-line-soft: color-mix(in srgb, var(--hm-fg) 7%, transparent);
+    --hm-surface: color-mix(in srgb, var(--hm-fg) 4%, transparent);
+    --hm-surface-hover: color-mix(in srgb, var(--hm-fg) 8%, transparent);
+    --hm-track: color-mix(in srgb, var(--hm-fg) 10%, transparent);
+
+    /* Data tones. These carry meaning, so they never appear on chrome. */
+    --hm-code: var(--vscode-charts-blue, #3794ff);
+    --hm-doc: var(--vscode-charts-green, #89d185);
+    --hm-comment: var(--vscode-charts-yellow, #cca700);
+    --hm-blank: color-mix(in srgb, var(--hm-fg) 24%, transparent);
+
+    --hm-excellent: var(--vscode-charts-green, #89d185);
+    --hm-good: var(--vscode-charts-blue, #3794ff);
+    --hm-fair: var(--vscode-charts-yellow, #cca700);
+    --hm-poor: var(--vscode-charts-red, #f14c4c);
+
+    /* Rank-ordered language palette: the biggest languages stay separable. */
+    --hm-tone-0: var(--vscode-charts-blue, #3794ff);
+    --hm-tone-1: var(--vscode-charts-green, #89d185);
+    --hm-tone-2: var(--vscode-charts-orange, #d18616);
+    --hm-tone-3: var(--vscode-charts-purple, #b180d7);
+    --hm-tone-4: var(--vscode-charts-yellow, #cca700);
+    --hm-tone-5: var(--vscode-charts-red, #f14c4c);
+    --hm-tone-rest: color-mix(in srgb, var(--hm-fg) 30%, transparent);
+
+    --hm-font: var(--vscode-font-family);
+    --hm-mono: var(--vscode-editor-font-family, ui-monospace, monospace);
+
+    --hm-r: 6px;
+    --hm-r-mark: 3px;
+
+    --hm-gutter: 1.5rem;
+    --hm-max: 1160px;
+    --hm-topbar-h: 44px;
+
+    --hm-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --hm-fast: 140ms;
+    --hm-base: 260ms;
+}
+
+/* High-contrast themes need real borders, not tinted ones. */
+body.vscode-high-contrast {
+    --hm-line: var(--vscode-contrastBorder, currentColor);
+    --hm-line-soft: var(--vscode-contrastBorder, currentColor);
+    --hm-surface: transparent;
+}
+
+/* ------------------------------------------------------------------ base */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    /* Anchor jumps must clear the sticky bar. */
+    scroll-padding-top: calc(var(--hm-topbar-h) + 1.25rem);
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--hm-font);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--hm-fg);
+    background: var(--hm-bg);
+    -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+figure {
+    margin: 0;
+    padding: 0;
+}
+
+ul,
+ol {
+    list-style: none;
+}
+
+/* Numbers read as numbers: the editor's own font, aligned in columns. */
+.num {
+    font-family: var(--hm-mono);
+    font-variant-numeric: tabular-nums slashed-zero;
+    font-feature-settings:
+        'tnum' 1,
+        'zero' 1;
+}
+
+:focus-visible {
+    outline: 2px solid var(--vscode-focusBorder);
+    outline-offset: 2px;
+    border-radius: var(--hm-r-mark);
+}
+
+::selection {
+    background: var(--vscode-editor-selectionBackground);
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--vscode-scrollbarSlider-background);
+    border-radius: 5px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--vscode-scrollbarSlider-hoverBackground);
+    background-clip: content-box;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- topbar */
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: color-mix(in srgb, var(--hm-bg) 88%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--hm-line-soft);
+}
+
+.topbar-inner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    height: var(--hm-topbar-h);
+    max-width: var(--hm-max);
+    margin: 0 auto;
+    padding: 0 var(--hm-gutter);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    flex-shrink: 0;
+}
+
+/* Icons ship as inline SVG inside a span, so the span owns the box. */
+.brand-mark,
+.empty-icon,
+.langrow-caret,
+.iconbtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.brand-mark svg,
+.empty-icon svg,
+.langrow-caret svg,
+.iconbtn svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.brand-mark {
+    width: 14px;
+    height: 14px;
+    color: var(--hm-code);
+}
+
+.sep {
+    opacity: 0.4;
+    margin: 0 0.4rem;
+}
+
+.brand-name {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.brand-scope {
+    color: var(--hm-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.brand-scope::before {
+    content: '/';
+    margin-right: 0.4rem;
+    opacity: 0.45;
+}
+
+/* Once the hero scrolls away the bar carries the headline, so the primary
+   number is never off-screen. Only shown where there is room for it. */
+.topbar-peek {
+    display: none;
+    min-width: 0;
+    color: var(--hm-dim);
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(4px);
+    transition:
+        opacity var(--hm-base) var(--hm-ease),
+        transform var(--hm-base) var(--hm-ease);
+    pointer-events: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (min-width: 960px) {
+    .topbar-peek {
+        display: block;
+    }
+}
+
+.topbar-peek strong {
+    color: var(--hm-fg);
+    font-weight: 600;
+}
+
+body.is-scrolled .topbar-peek {
+    opacity: 1;
+    transform: none;
+}
+
+.secnav {
+    display: flex;
+    gap: 0.125rem;
+    margin-left: auto;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.secnav::-webkit-scrollbar {
+    display: none;
+}
+
+.secnav-link {
+    position: relative;
+    padding: 0.3rem 0.6rem;
+    border-radius: var(--hm-r-mark);
+    color: var(--hm-dim);
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+        color var(--hm-fast) ease,
+        background-color var(--hm-fast) ease;
+}
+
+.secnav-link:hover {
+    color: var(--hm-fg);
+    background: var(--hm-surface-hover);
+}
+
+.secnav-link.is-current {
+    color: var(--hm-fg);
+    font-weight: 600;
+}
+
+.secnav-link.is-current::after {
+    content: '';
+    position: absolute;
+    left: 0.6rem;
+    right: 0.6rem;
+    bottom: -1px;
+    height: 2px;
+    background: var(--hm-code);
+    border-radius: 1px;
+}
+
+.topbar-actions {
+    display: flex;
+    gap: 0.125rem;
+    flex-shrink: 0;
+}
+
+.iconbtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--hm-r-mark);
+    background: transparent;
+    color: var(--hm-dim);
+    cursor: pointer;
+    transition:
+        color var(--hm-fast) ease,
+        background-color var(--hm-fast) ease;
+}
+
+.iconbtn:hover {
+    color: var(--hm-fg);
+    background: var(--hm-surface-hover);
+}
+
+.iconbtn:active {
+    transform: scale(0.94);
+}
+
+.iconbtn svg {
+    width: 15px;
+    height: 15px;
+}
+
+.iconbtn[data-busy='true'] svg {
+    animation: hm-spin 900ms linear infinite;
+}
+
+/* Indeterminate sweep shown while a re-analysis is in flight. */
+.topbar-progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity var(--hm-fast) ease;
+}
+
+body.is-analyzing .topbar-progress {
+    opacity: 1;
+}
+
+.topbar-progress::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: 34%;
+    background: var(--hm-code);
+    transform: translateX(-100%);
+}
+
+body.is-analyzing .topbar-progress::after {
+    animation: hm-sweep 1.3s var(--hm-ease) infinite;
+}
+
+@keyframes hm-sweep {
+    to {
+        transform: translateX(400%);
+    }
+}
+
+@keyframes hm-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ----------------------------------------------------------------- page */
+
+.page {
+    max-width: var(--hm-max);
+    margin: 0 auto;
+    padding: 0 var(--hm-gutter) 4rem;
+}
+
+.section {
+    padding: 2.5rem 0;
+    border-top: 1px solid var(--hm-line-soft);
+}
+
+.section:first-child {
+    border-top: 0;
+    padding-top: 2rem;
+}
+
+.section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.011em;
+}
+
+.section-note {
+    color: var(--hm-dim);
+}
+
+/* Sections rise into place once, on first view. Gated on the script having
+   run so a scripting failure cannot leave the report invisible. */
+.hm-js .reveal {
+    opacity: 0;
+    transform: translateY(14px);
+}
+
+.hm-js .reveal.is-in {
+    opacity: 1;
+    transform: none;
+    transition:
+        opacity 520ms var(--hm-ease),
+        transform 520ms var(--hm-ease);
+}
+
+/* Marks where the headline passes under the sticky bar. */
+#hm-top-sentinel {
+    height: 1px;
+    margin-top: -1px;
+}
+
+/* ----------------------------------------------------------------- hero */
+
+.hero {
+    display: grid;
+    gap: 2rem;
+    align-items: start;
+}
+
+.hero-figure {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.hero-number {
+    font-family: var(--hm-mono);
+    font-variant-numeric: tabular-nums slashed-zero;
+    font-size: clamp(2.5rem, 8.5vw, 4.25rem);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.035em;
+}
+
+.hero-unit {
+    font-size: clamp(0.95rem, 2.4vw, 1.15rem);
+    color: var(--hm-dim);
+}
+
+.hero-support {
+    margin-top: 0.75rem;
+    color: var(--hm-dim);
+}
+
+.hero-support .num {
+    color: var(--hm-fg);
+}
+
+.hero-support .sep {
+    opacity: 0.4;
+    margin: 0 0.45rem;
+}
+
+/* ------------------------------------------------------- composition bar */
+
+.cbar {
+    display: flex;
+    width: 100%;
+    height: 10px;
+    margin-top: 1.5rem;
+    border-radius: var(--hm-r-mark);
+    overflow: hidden;
+    background: var(--hm-track);
+}
+
+.cbar-seg {
+    height: 100%;
+    width: 0;
+    transition: width 760ms var(--hm-ease);
+}
+
+.cbar-seg + .cbar-seg {
+    box-shadow: -1px 0 0 var(--hm-bg);
+}
+
+.clegend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+    gap: 0.75rem 1.25rem;
+    margin-top: 1.125rem;
+}
+
+.clegend-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0 0.5rem;
+    align-items: center;
+}
+
+.clegend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    grid-row: span 2;
+}
+
+.clegend-label {
+    color: var(--hm-dim);
+}
+
+.clegend-value {
+    font-family: var(--hm-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+.clegend-value small {
+    font-weight: 400;
+    color: var(--hm-dim);
+    margin-left: 0.35rem;
+}
+
+.hero-balance {
+    margin-top: 1.125rem;
+    color: var(--hm-dim);
+    max-width: 46ch;
+}
+
+.hero-balance .num {
+    color: var(--hm-fg);
+    font-weight: 600;
+}
+
+/* ---------------------------------------------------------------- gauge */
+
+.gauge-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    padding: 1.25rem;
+    border: 1px solid var(--hm-line-soft);
+    border-radius: var(--hm-r);
+    background: var(--hm-surface);
+}
+
+.gauge-top {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.gauge {
+    width: 92px;
+    height: 92px;
+    flex-shrink: 0;
+    transform: rotate(-90deg);
+    overflow: visible;
+}
+
+.gauge-track {
+    fill: none;
+    stroke: var(--hm-track);
+    stroke-width: 7;
+}
+
+.gauge-value {
+    fill: none;
+    stroke-width: 7;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 900ms var(--hm-ease);
+}
+
+/* The user's own threshold, marked on the ring so the score reads as
+   pass/fail against their bar rather than an abstract number. */
+.gauge-target {
+    stroke: var(--hm-fg);
+    stroke-width: 2;
+    opacity: 0.5;
+}
+
+.gauge-readout {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.gauge-score {
+    display: flex;
+    align-items: baseline;
+    gap: 0.15rem;
+    font-family: var(--hm-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.03em;
+}
+
+.gauge-score small {
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--hm-dim);
+}
+
+.gauge-band {
+    font-weight: 600;
+}
+
+.gauge-caption {
+    color: var(--hm-dim);
+}
+
+.gauge-detail {
+    color: var(--hm-dim);
+    padding-top: 0.875rem;
+    border-top: 1px solid var(--hm-line-soft);
+}
+
+.band-excellent {
+    color: var(--hm-excellent);
+}
+
+.band-good {
+    color: var(--hm-good);
+}
+
+.band-fair {
+    color: var(--hm-fair);
+}
+
+.band-poor {
+    color: var(--hm-poor);
+}
+
+.gauge-value.band-excellent {
+    stroke: var(--hm-excellent);
+}
+
+.gauge-value.band-good {
+    stroke: var(--hm-good);
+}
+
+.gauge-value.band-fair {
+    stroke: var(--hm-fair);
+}
+
+.gauge-value.band-poor {
+    stroke: var(--hm-poor);
+}
+
+/* --------------------------------------------------------------- controls */
+
+.seg {
+    display: inline-flex;
+    padding: 2px;
+    border: 1px solid var(--hm-line-soft);
+    border-radius: 999px;
+    background: var(--hm-surface);
+}
+
+.seg-btn {
+    padding: 0.2rem 0.7rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--hm-dim);
+    font: inherit;
+    cursor: pointer;
+    transition:
+        color var(--hm-fast) ease,
+        background-color var(--hm-fast) ease;
+}
+
+.seg-btn:hover {
+    color: var(--hm-fg);
+}
+
+.seg-btn[aria-pressed='true'] {
+    color: var(--vscode-button-foreground, var(--hm-fg));
+    background: var(--vscode-button-background, var(--hm-surface-hover));
+}
+
+.linkbtn {
+    align-self: flex-start;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--vscode-textLink-foreground);
+    font: inherit;
+    cursor: pointer;
+}
+
+.linkbtn:hover {
+    color: var(--vscode-textLink-activeForeground);
+    text-decoration: underline;
+}
+
+.disclosure {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.55rem;
+    border: 1px dashed var(--hm-line);
+    border-radius: var(--hm-r);
+    background: transparent;
+    color: var(--hm-dim);
+    font: inherit;
+    cursor: pointer;
+    transition:
+        color var(--hm-fast) ease,
+        border-color var(--hm-fast) ease,
+        background-color var(--hm-fast) ease;
+}
+
+.disclosure:hover {
+    color: var(--hm-fg);
+    border-color: var(--hm-line);
+    border-style: solid;
+    background: var(--hm-surface);
+}
+
+/* ------------------------------------------------------------- languages */
+
+.langbar {
+    display: flex;
+    width: 100%;
+    height: 26px;
+    border-radius: var(--hm-r-mark);
+    overflow: hidden;
+    background: var(--hm-track);
+    margin-bottom: 1.5rem;
+}
+
+/* Proportion only. Labels live in the ranked list below, where they are
+   guaranteed to meet contrast against the editor background. */
+.langbar-seg {
+    height: 100%;
+    width: 0;
+    transition:
+        width 760ms var(--hm-ease),
+        filter var(--hm-fast) ease;
+    cursor: default;
+}
+
+.langbar-seg + .langbar-seg {
+    box-shadow: -1px 0 0 var(--hm-bg);
+}
+
+.langbar-seg:hover,
+.langbar-seg.is-active {
+    filter: brightness(1.18);
+}
+
+.langlist {
+    display: flex;
+    flex-direction: column;
+}
+
+.langrow {
+    border-top: 1px solid var(--hm-line-soft);
+}
+
+.langrow:first-child {
+    border-top: 0;
+}
+
+.langrow-btn {
+    display: grid;
+    grid-template-columns: 10px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.7rem 0.5rem;
+    margin: 0 -0.5rem;
+    border: 0;
+    border-radius: var(--hm-r-mark);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--hm-fast) ease;
+}
+
+.langrow-btn:hover,
+.langrow-btn.is-hot {
+    background: var(--hm-surface-hover);
+}
+
+.langrow-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+}
+
+.langrow-main {
+    min-width: 0;
+}
+
+.langrow-name {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+}
+
+.langrow-label {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.langrow-ext {
+    font-family: var(--hm-mono);
+    font-size: 11px;
+    color: var(--hm-dim);
+}
+
+/* Share is already stated twice (stacked bar, percentage column), so the row
+   keeps only the fill: eight rails would be the third telling. Both are spans
+   inside a span, so they need blockifying by hand before height applies. */
+.langrow-track {
+    display: block;
+    height: 3px;
+    margin-top: 0.45rem;
+    overflow: hidden;
+}
+
+.langrow-fill {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: 2px;
+    transition: width 620ms var(--hm-ease);
+}
+
+.langrow-figures {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.langrow-pct {
+    font-family: var(--hm-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    min-width: 3.4em;
+}
+
+.langrow-sub {
+    color: var(--hm-dim);
+    font-variant-numeric: tabular-nums;
+}
+
+.langrow-caret {
+    width: 12px;
+    height: 12px;
+    color: var(--hm-dim);
+    transition: transform var(--hm-base) var(--hm-ease);
+}
+
+.langrow-btn[aria-expanded='true'] .langrow-caret {
+    transform: rotate(90deg);
+}
+
+/* Per-language breakdown, revealed in place. grid-template-rows animates
+   without touching layout-triggering height. */
+.langrow-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--hm-base) var(--hm-ease);
+}
+
+.langrow-panel > div {
+    overflow: hidden;
+}
+
+.langrow-btn[aria-expanded='true'] + .langrow-panel {
+    grid-template-rows: 1fr;
+}
+
+.langrow-detail {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+    gap: 0.75rem 1.25rem;
+    padding: 0.25rem 0 1rem 1.75rem;
+}
+
+.langrow-stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.langrow-stat dt {
+    color: var(--hm-dim);
+    font-size: 11.5px;
+}
+
+.langrow-stat dd {
+    margin: 0.1rem 0 0;
+    font-family: var(--hm-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+/* --------------------------------------------------------------- quality */
+
+.levers {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.lever {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 0.35rem 1rem;
+    padding: 0.9rem 0;
+    border-top: 1px solid var(--hm-line-soft);
+}
+
+.lever:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.lever-name {
+    font-weight: 600;
+}
+
+.lever-weight {
+    margin-left: 0.5rem;
+    color: var(--hm-dim);
+    font-weight: 400;
+}
+
+.lever-score {
+    font-family: var(--hm-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.0625rem;
+    font-weight: 600;
+}
+
+.lever-track {
+    grid-column: 1 / -1;
+    height: 5px;
+    border-radius: 2px;
+    background: var(--hm-track);
+    overflow: hidden;
+}
+
+.lever-fill {
+    height: 100%;
+    width: 0;
+    border-radius: 2px;
+    transition: width 680ms var(--hm-ease);
+}
+
+.lever-fill.band-excellent {
+    background: var(--hm-excellent);
+}
+
+.lever-fill.band-good {
+    background: var(--hm-good);
+}
+
+.lever-fill.band-fair {
+    background: var(--hm-fair);
+}
+
+.lever-fill.band-poor {
+    background: var(--hm-poor);
+}
+
+.lever-basis {
+    grid-column: 1 / -1;
+    color: var(--hm-dim);
+}
+
+.lever.is-lead .lever-name::after {
+    content: 'biggest lever';
+    margin-left: 0.5rem;
+    padding: 0.05rem 0.4rem;
+    border: 1px solid var(--hm-line);
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--hm-dim);
+    white-space: nowrap;
+}
+
+/* ------------------------------------------------------------ stat grids */
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--hm-line-soft);
+    border: 1px solid var(--hm-line-soft);
+    border-radius: var(--hm-r);
+    overflow: hidden;
+}
+
+.stat {
+    padding: 1rem 1.125rem;
+    background: var(--hm-bg);
+}
+
+.stat-label {
+    color: var(--hm-dim);
+    font-size: 11.5px;
+}
+
+.stat-value {
+    margin-top: 0.25rem;
+    font-family: var(--hm-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.375rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+}
+
+.stat-hint {
+    margin-top: 0.2rem;
+    color: var(--hm-dim);
+}
+
+/* ------------------------------------------------------------- structure */
+
+.bands {
+    display: flex;
+    width: 100%;
+    height: 8px;
+    margin: 1.25rem 0 1rem;
+    border-radius: var(--hm-r-mark);
+    overflow: hidden;
+    background: var(--hm-track);
+}
+
+.bands-seg {
+    height: 100%;
+    width: 0;
+    transition: width 700ms var(--hm-ease);
+}
+
+.bands-seg + .bands-seg {
+    box-shadow: -1px 0 0 var(--hm-bg);
+}
+
+/* ------------------------------------------------------------ empty state */
+
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 4rem 0;
+    max-width: 34rem;
+}
+
+.empty-icon {
+    width: 28px;
+    height: 28px;
+    color: var(--hm-dim);
+}
+
+.empty-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.empty-body {
+    color: var(--hm-dim);
+    line-height: 1.65;
+}
+
+.empty-body code {
+    padding: 0.05rem 0.3rem;
+    border-radius: var(--hm-r-mark);
+    background: var(--hm-surface);
+    font-family: var(--hm-mono);
+    font-size: 0.92em;
+    color: var(--hm-fg);
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid transparent;
+    border-radius: var(--hm-r-mark);
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    font: inherit;
+    cursor: pointer;
+    transition: background-color var(--hm-fast) ease;
+}
+
+.btn:hover {
+    background: var(--vscode-button-hoverBackground);
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+/* ----------------------------------------------------------------- meta */
+
+.meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1rem;
+    padding-top: 1.5rem;
+    margin-top: 2.5rem;
+    border-top: 1px solid var(--hm-line-soft);
+    color: var(--hm-dim);
+}
+
+.meta-item {
+    display: inline-flex;
+    gap: 0.35rem;
+}
+
+.meta-item span {
+    color: var(--hm-fg);
+}
+
+/* Transient confirmation for clipboard actions. */
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 1.5rem;
+    z-index: 40;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid var(--hm-line);
+    border-radius: var(--hm-r);
+    background: var(--vscode-notifications-background, var(--hm-bg));
+    color: var(--vscode-notifications-foreground, var(--hm-fg));
+    box-shadow: 0 6px 24px color-mix(in srgb, #000 28%, transparent);
+    opacity: 0;
+    transform: translate(-50%, 8px);
+    pointer-events: none;
+    transition:
+        opacity var(--hm-base) var(--hm-ease),
+        transform var(--hm-base) var(--hm-ease);
+}
+
+.toast.is-shown {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+/* ---------------------------------------------------------------- palette
+ *
+ * Every coloured mark in the report resolves here and nowhere else, so colour
+ * stays a data channel. Declared last so no component rule can shadow it.
+ */
+
+/* Ranks past the distinct set share one muted tone. */
+[data-tone] {
+    background: var(--hm-tone-rest);
+}
+
+[data-tone='0'] {
+    background: var(--hm-tone-0);
+}
+
+[data-tone='1'] {
+    background: var(--hm-tone-1);
+}
+
+[data-tone='2'] {
+    background: var(--hm-tone-2);
+}
+
+[data-tone='3'] {
+    background: var(--hm-tone-3);
+}
+
+[data-tone='4'] {
+    background: var(--hm-tone-4);
+}
+
+[data-tone='5'] {
+    background: var(--hm-tone-5);
+}
+
+/* Composition keys are semantic rather than ranked. */
+[data-tone='code'] {
+    background: var(--hm-code);
+}
+
+[data-tone='doc'] {
+    background: var(--hm-doc);
+}
+
+[data-tone='comment'] {
+    background: var(--hm-comment);
+}
+
+[data-tone='blank'] {
+    background: var(--hm-blank);
+}
+
+/* ----------------------------------------------------------- breakpoints */
+
+/* Wide enough to set the score beside the headline. Below this the panel is
+   a narrow editor column and everything runs in one track. */
+@media (min-width: 720px) {
+    .levers {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 2.5rem;
+    }
+
+    .lever:nth-child(2) {
+        border-top: 0;
+        padding-top: 0;
+    }
+}
+
+/* The score only earns a column once the headline still fits on one line
+   beside it; below this the gauge reads better stacked under the total. */
+@media (min-width: 860px) {
+    .hero {
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 2.5rem;
+    }
+}
+
+@media (min-width: 1040px) {
+    :root {
+        --hm-gutter: 2.5rem;
+    }
+
+    body {
+        font-size: 13.5px;
+    }
+
+    .hero {
+        grid-template-columns: minmax(0, 1fr) 340px;
+    }
+}
+
+/* Narrow side-by-side column: drop secondary figures and tighten rhythm. */
+@media (max-width: 560px) {
+    :root {
+        --hm-gutter: 1rem;
+    }
+
+    .brand-scope,
+    .topbar-peek {
+        display: none;
+    }
+
+    .section {
+        padding: 2rem 0;
+    }
+
+    .langrow-sub {
+        display: none;
+    }
+
+    .langrow-btn {
+        grid-template-columns: 10px minmax(0, 1fr) auto;
+        gap: 0.6rem;
+    }
+
+    .langrow-detail {
+        padding-left: 0;
+    }
+
+    .gauge-card {
+        padding: 1rem;
+    }
+
+    .stat {
+        padding: 0.875rem 1rem;
+    }
+
+    .stat-value {
+        font-size: 1.25rem;
+    }
+}
+
+/* Below this the four jump links cannot all fit, and a nav that silently
+   drops its last item is worse than no nav: the report is short enough to
+   scroll, and the actions are what the reader still needs at hand. */
+@media (max-width: 640px) {
+    .secnav {
+        display: none;
+    }
+}
+
+/* At this width even the wordmark competes with the actions. */
+@media (max-width: 420px) {
+    .brand-name {
+        display: none;
+    }
+}
+
+/* --------------------------------------------------------- reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+    }
+
+    .reveal {
+        opacity: 1;
+        transform: none;
+    }
+}

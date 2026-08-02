@@ -8,6 +8,11 @@
 const fs = require('fs');
 const path = require('path');
 
+// Every check below names a path relative to the extension root. Anchoring on
+// this script's own location and moving there means the script works from any
+// working directory, rather than only when invoked from the root.
+process.chdir(path.join(__dirname, '..'));
+
 console.log('🔍 HowMany VS Code Extension - Marketplace Readiness Check');
 console.log('='.repeat(60));
 
@@ -33,8 +38,7 @@ function checkFile(filePath, description) {
 }
 
 // Load package.json
-const packagePath = path.join(__dirname, 'package.json');
-const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
 console.log('\n📦 Package Configuration');
 console.log('-'.repeat(30));
@@ -76,7 +80,7 @@ if (readmeExists) {
 checkFile('CHANGELOG.md', 'CHANGELOG.md');
 checkFile('CONTRIBUTING.md', 'CONTRIBUTING.md');
 checkFile('LICENSE', 'LICENSE file');
-checkFile('MARKETPLACE.md', 'Marketplace deployment guide');
+checkFile('docs/marketplace.md', 'Marketplace deployment guide');
 
 console.log('\n🏗️ Build System');
 console.log('-'.repeat(30));
@@ -146,5 +150,5 @@ if (failed === 0) {
     console.log('Please fix the failed checks above.');
 }
 
-console.log('\n📖 For detailed instructions, see MARKETPLACE.md');
+console.log('\n📖 For detailed instructions, see docs/marketplace.md');
 process.exit(failed > 0 ? 1 : 0); 

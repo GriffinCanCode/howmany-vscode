@@ -71,9 +71,14 @@ howmany-vscode/
 │   └── resources/                # Icons and assets
 ├── 📚 Documentation
 │   ├── README.md                 # Main documentation
-│   ├── STRUCTURE.md              # Architecture guide
-│   ├── TESTING.md                # Testing instructions
-│   └── CONTRIBUTING.md           # This file
+│   ├── CHANGELOG.md              # Release history
+│   ├── CONTRIBUTING.md           # This file
+│   └── docs/
+│       ├── structure.md          # Architecture guide
+│       ├── testing.md            # Testing instructions
+│       └── marketplace.md        # Marketplace deployment guide
+├── 🔧 Tooling
+│   └── tools/                    # Development scripts (npm run verify)
 └── 🏗️ Build Output
     └── dist/                     # Compiled JavaScript
 ```

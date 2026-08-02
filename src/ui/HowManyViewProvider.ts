@@ -1,31 +1,123 @@
 import * as vscode from 'vscode';
 import { HowManyResult } from '../types/HowManyTypes';
-import { Icons } from '../icons/icons';
+import {
+    EXTENSIONLESS,
+    ReportModel,
+    bandLabel,
+    buildReportModel,
+    countOf,
+    formatBytes,
+} from '../panels/reportModel';
+
+/**
+ * Sidebar tree for HowMany.
+ *
+ * Two rules shape this view. Rows that expand never also run a command, so a
+ * click always does exactly one predictable thing; and the numbers a reader
+ * needs most sit at the root, expanded, rather than one disclosure away.
+ */
+
+interface ItemOptions {
+    label: string;
+    description?: string;
+    tooltip?: string | vscode.MarkdownString;
+    collapsible?: vscode.TreeItemCollapsibleState;
+    contextValue?: string;
+    icon?: string;
+    iconColor?: string;
+    command?: vscode.Command;
+}
+
+export class HowManyItem extends vscode.TreeItem {
+    constructor(options: ItemOptions) {
+        super(options.label, options.collapsible ?? vscode.TreeItemCollapsibleState.None);
+        this.description = options.description;
+        this.tooltip =
+            options.tooltip ??
+            `${options.label}${options.description ? ` · ${options.description}` : ''}`;
+        this.contextValue = options.contextValue;
+        this.command = options.command;
+        if (options.icon) {
+            this.iconPath = new vscode.ThemeIcon(
+                options.icon,
+                options.iconColor ? new vscode.ThemeColor(options.iconColor) : undefined
+            );
+        }
+    }
+}
+
+const { Collapsed, Expanded, None } = vscode.TreeItemCollapsibleState;
+
+/** Theme colour for a 0-100 score, matching the report's bands. */
+function bandColor(score: number): string {
+    if (score >= 85) return 'charts.green';
+    if (score >= 70) return 'charts.blue';
+    if (score >= 55) return 'charts.yellow';
+    return 'charts.red';
+}
+
+/**
+ * Fixed-width bar for Markdown tooltips.
+ *
+ * Safe only inside a code span, where the font is guaranteed monospace and
+ * the block glyphs line up into a continuous rule.
+ */
+function bar(pct: number, width = 12): string {
+    const filled = Math.round((Math.max(0, Math.min(100, pct)) / 100) * width);
+    return '█'.repeat(filled) + '░'.repeat(width - filled);
+}
+
+function markdown(lines: string[]): vscode.MarkdownString {
+    const md = new vscode.MarkdownString(lines.join('\n'));
+    md.supportThemeIcons = true;
+    return md;
+}
 
 export class HowManyViewProvider implements vscode.TreeDataProvider<HowManyItem> {
-    private _onDidChangeTreeData: vscode.EventEmitter<HowManyItem | undefined | null | void> =
-        new vscode.EventEmitter<HowManyItem | undefined | null | void>();
-    readonly onDidChangeTreeData: vscode.Event<HowManyItem | undefined | null | void> =
-        this._onDidChangeTreeData.event;
+    private _onDidChangeTreeData = new vscode.EventEmitter<HowManyItem | undefined | null | void>();
+    readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-    private result: HowManyResult | null = null;
+    private model: ReportModel | null = null;
     private isAnalyzing = false;
-
-    constructor() {}
+    private failed = false;
 
     refresh(): void {
         this._onDidChangeTreeData.fire();
     }
 
     updateResult(result: HowManyResult): void {
-        this.result = result;
+        this.model = buildReportModel(result, {
+            overall: 70,
+            maintainability: 65,
+            documentation: 20,
+            complexity: 10,
+            ...vscode.workspace
+                .getConfiguration('howmany')
+                .get('analysis.qualityThresholds', {} as Record<string, number>),
+        });
         this.isAnalyzing = false;
+        this.failed = false;
         this.refresh();
     }
 
     setAnalyzing(analyzing: boolean): void {
         this.isAnalyzing = analyzing;
+        if (analyzing) this.failed = false;
         this.refresh();
+    }
+
+    setFailed(): void {
+        this.isAnalyzing = false;
+        this.failed = true;
+        this.refresh();
+    }
+
+    /** Short summary for the view header, so the count is visible when collapsed. */
+    get headerDescription(): string {
+        if (this.isAnalyzing) return 'analyzing…';
+        if (!this.model) return '';
+        const { lines, files } = this.model.headline;
+        return `${compact(lines)} lines · ${compact(files)} ${files === 1 ? 'file' : 'files'}`;
     }
 
     getTreeItem(element: HowManyItem): vscode.TreeItem {
@@ -33,231 +125,239 @@ export class HowManyViewProvider implements vscode.TreeDataProvider<HowManyItem>
     }
 
     getChildren(element?: HowManyItem): Thenable<HowManyItem[]> {
-        if (!element) {
-            // Root level items
-            return Promise.resolve(this.getRootItems());
-        }
+        if (!element) return Promise.resolve(this.rootItems());
 
-        // Child items for expandable elements
-        if (element.contextValue === 'overview') {
-            return Promise.resolve(this.getOverviewDetails());
-        } else if (element.contextValue === 'quality') {
-            return Promise.resolve(this.getQualityDetails());
-        } else if (element.contextValue === 'languages') {
-            return Promise.resolve(this.getLanguageDetails());
+        switch (element.contextValue) {
+            case 'overview':
+                return Promise.resolve(this.overviewChildren());
+            case 'quality':
+                return Promise.resolve(this.qualityChildren());
+            case 'languages':
+                return Promise.resolve(this.languageChildren());
+            default:
+                return Promise.resolve([]);
         }
-
-        return Promise.resolve([]);
     }
 
-    private getRootItems(): HowManyItem[] {
+    private rootItems(): HowManyItem[] {
         if (this.isAnalyzing) {
             return [
-                new HowManyItem(
-                    'Analyzing...',
-                    '',
-                    vscode.TreeItemCollapsibleState.None,
-                    'analyzing',
-                    'loading~spin'
-                ),
+                new HowManyItem({
+                    label: 'Analyzing…',
+                    description: 'counting files',
+                    icon: 'loading~spin',
+                }),
             ];
         }
 
-        if (!this.result) {
+        if (this.failed) {
             return [
-                new HowManyItem(
-                    'No analysis data',
-                    'Run analysis to see results',
-                    vscode.TreeItemCollapsibleState.None,
-                    'empty',
-                    'info'
-                ),
+                new HowManyItem({
+                    label: 'Analysis failed',
+                    description: 'check the HowMany binary path',
+                    icon: 'error',
+                    iconColor: 'charts.red',
+                    command: {
+                        command: 'howmany.openSettings',
+                        title: 'Open HowMany settings',
+                    },
+                }),
             ];
         }
 
-        const items: HowManyItem[] = [];
+        // An empty array lets the contributed welcome view take over, which
+        // gives the first run real buttons instead of a dead placeholder row.
+        const model = this.model;
+        if (!model) return [];
 
-        // Quick overview - always visible and compact
-        const fileCount = this.result.basic.total_files.toLocaleString();
-        const lineCount = this.result.basic.total_lines.toLocaleString();
+        const items: HowManyItem[] = [
+            new HowManyItem({
+                label: `${model.headline.lines.toLocaleString()} lines`,
+                description: `${countOf(model.headline.files, 'file')} · ${model.headline.totalSize}`,
+                collapsible: Expanded,
+                contextValue: 'overview',
+                icon: 'symbol-numeric',
+                tooltip: this.overviewTooltip(model),
+            }),
+        ];
+
+        if (model.quality) {
+            const score = Math.round(model.quality.overall);
+            items.push(
+                new HowManyItem({
+                    label: `Quality ${score}`,
+                    description: `${bandLabel(model.quality.band)} · target ${model.quality.target}`,
+                    collapsible: Expanded,
+                    contextValue: 'quality',
+                    icon: model.quality.meetsTarget ? 'pass' : 'warning',
+                    iconColor: bandColor(model.quality.overall),
+                    tooltip: this.qualityTooltip(model),
+                })
+            );
+        }
+
+        if (model.languages.length) {
+            const top = model.languages[0];
+            items.push(
+                new HowManyItem({
+                    label: 'Languages',
+                    description: `${top.label} ${Math.round(top.pctLines)}%${model.languages.length > 1 ? ` of ${model.languages.length}` : ''}`,
+                    collapsible: Collapsed,
+                    contextValue: 'languages',
+                    icon: 'symbol-file',
+                    tooltip: this.languagesTooltip(model),
+                })
+            );
+        }
 
         items.push(
-            new HowManyItem(
-                `${fileCount} files`,
-                `${lineCount} lines total`,
-                vscode.TreeItemCollapsibleState.Collapsed,
-                'overview',
-                'folder'
-            )
+            new HowManyItem({
+                label: 'Open full report',
+                icon: 'graph',
+                command: {
+                    command: 'howmany.showReport',
+                    title: 'Show Analysis Report',
+                },
+            })
         );
-
-        // Quality score if available
-        const quality = this.result.ratios?.quality_metrics;
-        if (quality) {
-            const score = Math.round(quality.overall_quality_score);
-            const color = score >= 80 ? 'pass' : score >= 60 ? 'warning' : 'error';
-            items.push(
-                new HowManyItem(
-                    `${score}% quality`,
-                    `Overall code quality score`,
-                    vscode.TreeItemCollapsibleState.Collapsed,
-                    'quality',
-                    'target',
-                    color
-                )
-            );
-        }
-
-        // Top languages
-        const topLanguages = Object.entries(this.result.basic.stats_by_extension)
-            .sort(([, a], [, b]) => b.total_lines - a.total_lines)
-            .slice(0, 3);
-
-        if (topLanguages.length > 0) {
-            const topLang = topLanguages[0];
-            const percentage = Math.round(
-                (topLang[1].total_lines / this.result.basic.total_lines) * 100
-            );
-
-            items.push(
-                new HowManyItem(
-                    `${topLang[0].toUpperCase()} ${percentage}%`,
-                    `${topLanguages.length} languages detected`,
-                    vscode.TreeItemCollapsibleState.Collapsed,
-                    'languages',
-                    'code'
-                )
-            );
-        }
 
         return items;
     }
 
-    private getOverviewDetails(): HowManyItem[] {
-        if (!this.result) return [];
+    private overviewChildren(): HowManyItem[] {
+        const model = this.model;
+        if (!model) return [];
 
-        return [
-            new HowManyItem(
-                `${this.result.basic.code_lines.toLocaleString()} code lines`,
-                `${Math.round((this.result.basic.code_lines / this.result.basic.total_lines) * 100)}% of total`,
-                vscode.TreeItemCollapsibleState.None,
-                'detail'
-            ),
-            new HowManyItem(
-                `${this.result.basic.comment_lines.toLocaleString()} comments`,
-                `${Math.round((this.result.basic.comment_lines / this.result.basic.total_lines) * 100)}% of total`,
-                vscode.TreeItemCollapsibleState.None,
-                'detail'
-            ),
-            new HowManyItem(
-                `${this.result.basic.doc_lines.toLocaleString()} documentation`,
-                `${Math.round((this.result.basic.doc_lines / this.result.basic.total_lines) * 100)}% of total`,
-                vscode.TreeItemCollapsibleState.None,
-                'detail'
-            ),
-            new HowManyItem(
-                `${this.formatSize(this.result.basic.total_size)} total size`,
-                `Average ${this.formatSize(this.result.basic.average_file_size)} per file`,
-                vscode.TreeItemCollapsibleState.None,
-                'detail'
-            ),
-        ];
+        const slices = model.composition
+            .filter(slice => slice.lines > 0)
+            .map(
+                slice =>
+                    new HowManyItem({
+                        label: `${slice.lines.toLocaleString()} ${slice.label.toLowerCase()}`,
+                        description: `${slice.pct.toFixed(1)}%`,
+                        tooltip: markdown([
+                            `**${slice.label}**`,
+                            '',
+                            `\`${bar(slice.pct)}\` ${slice.pct.toFixed(1)}%`,
+                            '',
+                            `${slice.lines.toLocaleString()} of ${model.headline.lines.toLocaleString()} lines`,
+                        ]),
+                    })
+            );
+
+        slices.push(
+            new HowManyItem({
+                label: `${Math.round(model.headline.avgLinesPerFile).toLocaleString()} lines per file`,
+                description: 'average',
+                tooltip: `Across ${countOf(model.headline.files, 'file')}, ${model.headline.totalSize} on disk.`,
+            })
+        );
+
+        return slices;
     }
 
-    private getQualityDetails(): HowManyItem[] {
-        const quality = this.result?.ratios?.quality_metrics;
+    private qualityChildren(): HowManyItem[] {
+        const quality = this.model?.quality;
         if (!quality) return [];
 
-        return [
-            new HowManyItem(
-                `${Math.round(quality.maintainability_score)}% maintainability`,
-                'Code maintainability score',
-                vscode.TreeItemCollapsibleState.None,
-                'detail'
-            ),
-            new HowManyItem(
-                `${Math.round(quality.documentation_score)}% documentation`,
-                'Documentation coverage score',
-                vscode.TreeItemCollapsibleState.None,
-                'detail'
-            ),
-            new HowManyItem(
-                `${Math.round(quality.readability_score)}% readability`,
-                'Code readability score',
-                vscode.TreeItemCollapsibleState.None,
-                'detail'
-            ),
-        ];
+        return quality.levers.map(
+            lever =>
+                new HowManyItem({
+                    label: `${lever.label} ${Math.round(lever.value)}`,
+                    description:
+                        lever.key === quality.leverage.key
+                            ? `${lever.weight}% of score · biggest lever`
+                            : `${lever.weight}% of score`,
+                    icon: 'circle-filled',
+                    iconColor: bandColor(lever.value),
+                    tooltip: markdown([
+                        `**${lever.label}** · ${bandLabel(lever.band)}`,
+                        '',
+                        `\`${bar(lever.value)}\` ${lever.value.toFixed(1)}`,
+                        '',
+                        lever.basis,
+                        '',
+                        `Contributes ${lever.weight}% of the overall score.`,
+                    ]),
+                })
+        );
     }
 
-    private getLanguageDetails(): HowManyItem[] {
-        if (!this.result) return [];
+    private languageChildren(): HowManyItem[] {
+        const model = this.model;
+        if (!model) return [];
 
-        const languages = Object.entries(this.result.basic.stats_by_extension)
-            .sort(([, a], [, b]) => b.total_lines - a.total_lines)
-            .slice(0, 5);
-
-        return languages.map(([ext, stats]) => {
-            const percentage = Math.round(
-                (stats.total_lines / this.result!.basic.total_lines) * 100
-            );
-            return new HowManyItem(
-                `${ext.toUpperCase()}`,
-                `${stats.total_lines.toLocaleString()} lines (${percentage}%)`,
-                vscode.TreeItemCollapsibleState.None,
-                'detail'
-            );
-        });
+        return model.languages.slice(0, 10).map(
+            lang =>
+                new HowManyItem({
+                    label: lang.label,
+                    description: `${lang.pctLines.toFixed(1)}% · ${compact(lang.lines)} lines`,
+                    tooltip: markdown([
+                        lang.ext === EXTENSIONLESS
+                            ? `**${lang.label}**`
+                            : `**${lang.label}** \`.${lang.ext}\``,
+                        '',
+                        `\`${bar(lang.pctLines)}\` ${lang.pctLines.toFixed(1)}% of all lines`,
+                        '',
+                        `| | |`,
+                        `|---|---:|`,
+                        `| Files | ${lang.files.toLocaleString()} |`,
+                        `| Lines | ${lang.lines.toLocaleString()} |`,
+                        `| Average file | ${Math.round(lang.avgLines).toLocaleString()} lines |`,
+                        `| On disk | ${formatBytes(lang.size)} |`,
+                    ]),
+                })
+        );
     }
 
-    private formatSize(bytes: number): string {
-        const units = ['B', 'KB', 'MB', 'GB'];
-        let size = bytes;
-        let unitIndex = 0;
+    private overviewTooltip(model: ReportModel): vscode.MarkdownString {
+        return markdown([
+            `**${model.headline.lines.toLocaleString()} lines** across ${countOf(model.headline.files, 'file')}`,
+            '',
+            ...model.composition
+                .filter(slice => slice.lines > 0)
+                .map(
+                    slice =>
+                        `\`${bar(slice.pct)}\` ${slice.pct.toFixed(1).padStart(5)}%  ${slice.label}`
+                ),
+            '',
+            `${model.headline.totalSize} on disk · ${Math.round(model.headline.avgLinesPerFile).toLocaleString()} lines per file`,
+        ]);
+    }
 
-        while (size >= 1024 && unitIndex < units.length - 1) {
-            size /= 1024;
-            unitIndex++;
-        }
+    private qualityTooltip(model: ReportModel): vscode.MarkdownString {
+        const quality = model.quality!;
+        return markdown([
+            `**Quality ${Math.round(quality.overall)} / 100** · ${bandLabel(quality.band)}`,
+            '',
+            quality.verdict,
+            '',
+            ...quality.levers.map(
+                lever =>
+                    `\`${bar(lever.value)}\` ${Math.round(lever.value).toString().padStart(3)}  ${lever.label}`
+            ),
+            '',
+            quality.detail,
+        ]);
+    }
 
-        return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+    private languagesTooltip(model: ReportModel): vscode.MarkdownString {
+        return markdown([
+            `**${countOf(model.languages.length, 'language')}**`,
+            '',
+            ...model.languages
+                .slice(0, 8)
+                .map(
+                    lang =>
+                        `\`${bar(lang.pctLines)}\` ${lang.pctLines.toFixed(1).padStart(5)}%  ${lang.label}`
+                ),
+        ]);
     }
 }
 
-export class HowManyItem extends vscode.TreeItem {
-    constructor(
-        public readonly label: string,
-        public readonly description: string,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-        public readonly contextValue?: string,
-        public readonly iconName?: string,
-        public readonly colorTheme?: string
-    ) {
-        super(label, collapsibleState);
-
-        this.description = description;
-        this.tooltip = `${this.label}: ${this.description}`;
-        this.contextValue = contextValue;
-
-        // Set icon based on iconName
-        if (iconName) {
-            this.iconPath = new vscode.ThemeIcon(
-                iconName,
-                colorTheme ? new vscode.ThemeColor(`charts.${colorTheme}`) : undefined
-            );
-        }
-
-        // Add commands for clickable items
-        if (
-            contextValue === 'overview' ||
-            contextValue === 'quality' ||
-            contextValue === 'languages'
-        ) {
-            this.command = {
-                command: 'howmany.showReport',
-                title: 'Show Detailed Report',
-                arguments: [this],
-            };
-        }
-    }
+function compact(value: number): string {
+    if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+    if (value >= 10_000) return `${Math.round(value / 1000)}K`;
+    if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+    return value.toLocaleString();
 }

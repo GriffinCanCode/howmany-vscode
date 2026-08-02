@@ -1,6 +1,15 @@
 import * as vscode from 'vscode';
 import { HowManyResult, ExtensionConfig } from '../types/HowManyTypes';
-import { Icons } from '../icons/icons';
+import { countOf, languageName } from '../panels/reportModel';
+
+/**
+ * Fixed-width bar for Markdown hovers. Only safe inside a code span, where
+ * the font is monospace and the block glyphs align.
+ */
+function statusBar(pct: number, width = 10): string {
+    const filled = Math.round((Math.max(0, Math.min(100, pct)) / 100) * width);
+    return '█'.repeat(filled) + '░'.repeat(width - filled);
+}
 
 /**
  * Manages the HowMany status bar item with intelligent display and formatting
@@ -9,7 +18,7 @@ export class StatusBarManager implements vscode.Disposable {
     private statusBarItem: vscode.StatusBarItem;
     private config: ExtensionConfig;
     private lastResult: HowManyResult | null = null;
-    private readonly HOWMANY_ICON = '$(dashboard)';
+    private readonly HOWMANY_ICON = '$(graph)';
 
     constructor(config: ExtensionConfig) {
         this.config = config;
@@ -17,6 +26,9 @@ export class StatusBarManager implements vscode.Disposable {
             vscode.StatusBarAlignment.Right,
             100
         );
+        // Named so the entry is identifiable in the status bar's own toggle
+        // menu, which is what lets the label itself stay short.
+        this.statusBarItem.name = 'HowMany';
         this.updateClickCommand();
     }
 
@@ -70,6 +82,7 @@ export class StatusBarManager implements vscode.Disposable {
         this.statusBarItem.text = `${icon}${text}`;
         this.statusBarItem.color = color;
         this.statusBarItem.tooltip = this.buildTooltip(result);
+        this.statusBarItem.accessibilityInformation = { label: `HowMany: ${text}` };
     }
 
     /**
@@ -77,9 +90,13 @@ export class StatusBarManager implements vscode.Disposable {
      */
     showAnalyzing(): void {
         const icon = this.config.statusBar.showIcon ? '$(loading~spin) ' : '';
-        this.statusBarItem.text = `${icon}HowMany: Analyzing...`;
+        this.statusBarItem.text = `${icon}Analyzing…`;
         this.statusBarItem.color = new vscode.ThemeColor('charts.blue');
-        this.statusBarItem.tooltip = 'Analyzing workspace\n\nClick for options';
+        this.statusBarItem.tooltip = this.plainTooltip(
+            'HowMany',
+            'Counting files in the workspace.'
+        );
+        this.statusBarItem.accessibilityInformation = { label: 'HowMany: analyzing' };
     }
 
     /**
@@ -89,7 +106,11 @@ export class StatusBarManager implements vscode.Disposable {
         const icon = this.config.statusBar.showIcon ? `${this.HOWMANY_ICON} ` : '';
         this.statusBarItem.text = `${icon}HowMany`;
         this.statusBarItem.color = undefined;
-        this.statusBarItem.tooltip = 'HowMany Code Analysis\n\nClick to start analysis';
+        this.statusBarItem.tooltip = this.plainTooltip(
+            'HowMany',
+            'No analysis yet. Click to run one.'
+        );
+        this.statusBarItem.accessibilityInformation = { label: 'HowMany: no analysis yet' };
     }
 
     /**
@@ -97,9 +118,19 @@ export class StatusBarManager implements vscode.Disposable {
      */
     showError(): void {
         const icon = this.config.statusBar.showIcon ? '$(error) ' : '';
-        this.statusBarItem.text = `${icon}HowMany: Error`;
+        this.statusBarItem.text = `${icon}HowMany failed`;
         this.statusBarItem.color = new vscode.ThemeColor('errorForeground');
-        this.statusBarItem.tooltip = 'Analysis failed\n\nClick for options';
+        this.statusBarItem.tooltip = this.plainTooltip(
+            'HowMany',
+            'Analysis failed. Check that the `howmany` binary is on your PATH, or set `howmany.binaryPath`.'
+        );
+        this.statusBarItem.accessibilityInformation = { label: 'HowMany: analysis failed' };
+    }
+
+    private plainTooltip(title: string, body: string): vscode.MarkdownString {
+        const md = new vscode.MarkdownString(`**${title}**\n\n${body}`);
+        md.supportThemeIcons = true;
+        return md;
     }
 
     /**
@@ -118,7 +149,6 @@ export class StatusBarManager implements vscode.Disposable {
 
         let value: number;
         let unit: string;
-        let prefix = 'HowMany:';
 
         switch (display) {
             case 'files':
@@ -129,7 +159,7 @@ export class StatusBarManager implements vscode.Disposable {
                 const quality = result.ratios?.quality_metrics;
                 if (quality) {
                     const score = Math.round(quality.overall_quality_score);
-                    return `${prefix} ${score}% quality`;
+                    return `${score}% quality`;
                 }
                 // Fallback to lines if no quality data
                 value = result.basic.total_lines;
@@ -145,13 +175,13 @@ export class StatusBarManager implements vscode.Disposable {
                     // Prioritize quality warnings
                     if (qualityScore < this.config.analysis.qualityThresholds.overall) {
                         const score = Math.round(qualityScore);
-                        return `${prefix} ${score}% quality`;
+                        return `${score}% quality`;
                     }
 
                     // Show documentation issues if critical
                     if (docScore < this.config.analysis.qualityThresholds.documentation) {
                         const score = Math.round(docScore);
-                        return `${prefix} ${score}% docs`;
+                        return `${score}% docs`;
                     }
                 }
 
@@ -169,7 +199,7 @@ export class StatusBarManager implements vscode.Disposable {
                 ) {
                     // Poor quality: highlight quality score
                     const score = Math.round(result.ratios.quality_metrics.overall_quality_score);
-                    return `${prefix} ${score}% quality`;
+                    return `${score}% quality`;
                 } else {
                     // Default: show lines
                     value = result.basic.total_lines;
@@ -183,7 +213,7 @@ export class StatusBarManager implements vscode.Disposable {
         }
 
         const formattedValue = this.formatNumber(value, format);
-        return `${prefix} ${formattedValue} ${unit}`;
+        return `${formattedValue} ${unit}`;
     }
 
     /**
@@ -239,44 +269,55 @@ export class StatusBarManager implements vscode.Disposable {
     }
 
     /**
-     * Build clean, concise tooltip optimized for hover menus
+     * Build the hover card.
+     *
+     * Markdown rather than plain text so the hover can carry the composition
+     * bar and a real table, which is the difference between a label and a
+     * glanceable summary.
      */
-    private buildTooltip(result: HowManyResult): string {
-        const lines = ['HowMany Analysis'];
+    private buildTooltip(result: HowManyResult): vscode.MarkdownString {
+        const basic = result.basic;
+        const total = basic.total_lines;
+        const lines: string[] = [
+            `**${total.toLocaleString()} lines** across ${countOf(basic.total_files, 'file')}`,
+            '',
+        ];
 
-        // Essential metrics only
-        lines.push(
-            `${result.basic.total_files} files, ${this.formatNumber(result.basic.total_lines, 'abbreviated')} lines`
-        );
+        const composition = [
+            { label: 'Code', value: basic.code_lines },
+            { label: 'Docs', value: basic.doc_lines },
+            { label: 'Comments', value: basic.comment_lines },
+            { label: 'Blank', value: basic.blank_lines },
+        ].filter(slice => slice.value > 0);
 
-        // Quality score if available (most important metric)
+        for (const slice of composition) {
+            const share = total > 0 ? (slice.value / total) * 100 : 0;
+            lines.push(`\`${statusBar(share)}\` ${share.toFixed(1).padStart(5)}%  ${slice.label}`);
+        }
+
         const quality = result.ratios?.quality_metrics;
         if (quality) {
             const score = Math.round(quality.overall_quality_score);
-            const qualityText =
-                score >= 80
-                    ? 'Excellent'
-                    : score >= 65
-                      ? 'Good'
-                      : score >= 50
-                        ? 'Fair'
-                        : 'Needs Work';
-            lines.push(`Quality: ${score}% (${qualityText})`);
+            const target = this.config.analysis.qualityThresholds.overall;
+            lines.push(
+                '',
+                `Quality **${score}/100**, ${score >= target ? `at or above` : `below`} your target of ${target}`
+            );
         }
 
-        // Top language only
-        const topLanguages = Object.entries(result.basic.stats_by_extension).sort(
+        const top = Object.entries(basic.stats_by_extension ?? {}).sort(
             ([, a], [, b]) => b.total_lines - a.total_lines
-        );
-
-        if (topLanguages.length > 0) {
-            const [topExt, topData] = topLanguages[0];
-            const percentage = Math.round((topData.total_lines / result.basic.total_lines) * 100);
-            lines.push(`Primary: ${topExt.toUpperCase()} (${percentage}%)`);
+        )[0];
+        if (top) {
+            const share = total > 0 ? Math.round((top[1].total_lines / total) * 100) : 0;
+            lines.push('', `Mostly ${languageName(top[0])} (${share}%)`);
         }
 
-        lines.push('', 'Click for more options');
-        return lines.join('\n');
+        lines.push('', '$(three-bars) Click for actions');
+
+        const md = new vscode.MarkdownString(lines.join('\n'));
+        md.supportThemeIcons = true;
+        return md;
     }
 
     /**
