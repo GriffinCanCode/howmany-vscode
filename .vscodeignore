@@ -1,17 +1,57 @@
-.vscode/**
-.vscode-test/**
+# Everything listed here is excluded from the packaged .vsix.
+# Only compiled output in dist/, resources/, and the marketplace docs ship.
+
+# Source and build config
 src/**/*.ts
 src/**/test/**
 src/**/suite/**
-.gitignore
-.yarnrc
-vsc-extension-quickstart.md
 **/tsconfig.json
-**/.eslintrc.json
 **/*.map
 node_modules/**
+
+# Compiled output that the runtime never loads: the extension host resolves
+# only `main` and its requires. Declarations and the test harness are
+# development artifacts.
+dist/**/*.d.ts
+dist/**/*.d.ts.map
+dist/test/**
+
+# Editor and repo tooling
+.vscode/**
+.vscode-test/**
+**/.vscode-test/**
+.github/**
+.editorconfig
+.gitattributes
+.gitignore
+.yarnrc
+.npmrc
+.nvmrc
+
+# Lint and format config
+**/.eslintrc.json
 .eslintcache
+.prettierrc.json
+.prettierignore
+
+# Test and coverage artifacts
 **/.nyc_output
 **/coverage/**
-**/.vscode-test/**
-**/.DS_Store .env
+test-project/**
+verify-marketplace-ready.js
+
+# Contributor docs (README, CHANGELOG, and LICENSE are shown on the
+# marketplace listing and must stay in the package).
+CONTRIBUTING.md
+TESTING.md
+STRUCTURE.md
+MARKETPLACE.md
+vsc-extension-quickstart.md
+
+# Previously built packages
+*.vsix
+
+# OS and secrets
+**/.DS_Store
+.env
+.env.*
