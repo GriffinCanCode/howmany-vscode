@@ -4,7 +4,7 @@
 
 ### Prerequisites
 - VS Code 1.85.0+
-- Node.js 18+
+- Node.js 22+
 - HowMany binary installed and in PATH
 
 ### Building the Extension

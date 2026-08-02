@@ -7,7 +7,7 @@ howmany-vscode/
 ├── 📄 Core Configuration
 │   ├── package.json              # Extension manifest & dependencies
 │   ├── tsconfig.json             # TypeScript configuration
-│   ├── .eslintrc.json           # Code quality rules
+│   ├── eslint.config.js         # Code quality rules
 │   └── .vscodeignore            # Files to exclude from packaging
 │
 ├── 📦 Source Code

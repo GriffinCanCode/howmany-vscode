@@ -62,7 +62,7 @@ Key settings in VS Code preferences:
 
 - VS Code 1.85.0 or higher
 - HowMany CLI installed and accessible in PATH
-- Node.js 18+ (for development)
+- Node.js 22+ (for development only; the extension runs on VS Code's bundled Node)
 
 ## Integration
 

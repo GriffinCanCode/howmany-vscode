@@ -10,7 +10,7 @@ This guide covers the complete process of publishing the HowMany VS Code Extensi
 3. **GitHub Account** - For repository and automated publishing
 
 ### Required Tools
-- **Node.js 18+** - For building the extension
+- **Node.js 22+** - For building the extension
 - **Visual Studio Code Extension Manager (vsce)** - For packaging and publishing
 - **Git** - For version control
 

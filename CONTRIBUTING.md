@@ -7,7 +7,8 @@ Thank you for your interest in contributing to the HowMany VS Code Extension! Th
 ### Prerequisites
 
 - **VS Code**: 1.85.0 or higher
-- **Node.js**: 18.0.0 or higher
+- **Node.js**: 22.0.0 or higher (build tooling only — the extension itself runs
+  on the Node bundled with VS Code, currently 18.x)
 - **npm**: 8.0.0 or higher
 - **HowMany CLI**: Installed and accessible in PATH
 - **Git**: For version control
@@ -51,7 +52,7 @@ howmany-vscode/
 ├── 📄 Core Configuration
 │   ├── package.json              # Extension manifest & dependencies
 │   ├── tsconfig.json             # TypeScript configuration
-│   ├── .eslintrc.json           # Code quality rules
+│   ├── eslint.config.js         # Code quality rules
 │   └── .vscodeignore            # Files excluded from packaging
 ├── 📦 Source Code
 │   └── src/

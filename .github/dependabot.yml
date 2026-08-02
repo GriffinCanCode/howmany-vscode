@@ -16,6 +16,11 @@ updates:
       # dependency to track upward. Raising it drops support for older editors,
       # so it stays a deliberate manual decision.
       - dependency-name: "@types/vscode"
+      # @types/node describes the Node that VS Code bundles at the engines.vscode
+      # floor, not the newest Node on npm. Its major moves only when that floor
+      # moves; patches within the major are still welcome.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       dev-tooling:
         dependency-type: development
