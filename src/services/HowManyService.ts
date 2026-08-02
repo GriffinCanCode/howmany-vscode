@@ -19,16 +19,16 @@ export class HowManyService {
         }
 
         this.isAnalyzing = true;
-        
+
         try {
             const args = this.buildAnalysisArgs(workspacePath);
             const result = await this.executeHowMany(args);
-            
+
             if (result) {
                 this.lastResult = result;
                 return result;
             }
-            
+
             return null;
         } finally {
             this.isAnalyzing = false;
@@ -45,16 +45,16 @@ export class HowManyService {
         }
 
         this.isAnalyzing = true;
-        
+
         try {
             const args = this.buildAnalysisArgs(filePath);
             const result = await this.executeHowMany(args);
-            
+
             if (result) {
                 this.lastResult = result;
                 return result;
             }
-            
+
             return null;
         } finally {
             this.isAnalyzing = false;
@@ -116,7 +116,7 @@ export class HowManyService {
         // CLI mode or JSON output
         if (this.config.useCliMode) {
             args.push('--cli');
-            
+
             // Enhanced CLI output options
             if (this.config.showComplexity) args.push('--show-complexity');
             if (this.config.showQuality) args.push('--show-quality');
@@ -125,7 +125,7 @@ export class HowManyService {
         } else {
             args.push('--output', 'json');
         }
-        
+
         args.push('--no-interactive');
 
         // Basic options
@@ -212,7 +212,11 @@ export class HowManyService {
                         resolve(result);
                     }
                 } catch (error) {
-                    reject(new Error(`Failed to parse HowMany output: ${error}\n\nRaw output:\n${stdout}`));
+                    reject(
+                        new Error(
+                            `Failed to parse HowMany output: ${error}\n\nRaw output:\n${stdout}`
+                        )
+                    );
                 }
             });
 
@@ -234,7 +238,7 @@ export class HowManyService {
         // Find the start and end of the JSON object
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
-            
+
             if (line.startsWith('{') && jsonStart === -1) {
                 jsonStart = i;
                 braceCount = 1;
@@ -243,7 +247,7 @@ export class HowManyService {
                     if (char === '{') braceCount++;
                     else if (char === '}') braceCount--;
                 }
-                
+
                 if (braceCount === 0) {
                     jsonEnd = i;
                     break;
@@ -258,7 +262,7 @@ export class HowManyService {
         // Fallback: try to find JSON by looking for the first { and last }
         const firstBrace = output.indexOf('{');
         const lastBrace = output.lastIndexOf('}');
-        
+
         if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
             return output.substring(firstBrace, lastBrace + 1);
         }
@@ -274,11 +278,11 @@ export class HowManyService {
         const lines = output.trim().split('\n');
         const lastLine = lines[lines.length - 1];
         const match = lastLine.match(/(\d+)\s+files,\s+(\d+)\s+lines/);
-        
+
         if (!match) {
             throw new Error('Failed to parse CLI output format');
         }
-        
+
         // Create a minimal result object for CLI mode
         const result = {
             basic: {
@@ -293,10 +297,10 @@ export class HowManyService {
                 average_lines_per_file: 0,
                 largest_file_size: 0,
                 smallest_file_size: 0,
-                stats_by_extension: {}
-            }
+                stats_by_extension: {},
+            },
         } as unknown as HowManyResult;
-        
+
         return result;
     }
 
@@ -331,7 +335,9 @@ export class HowManyService {
         <p>Documentation Lines: ${result.basic.doc_lines.toLocaleString()}</p>
         <p>Comment Lines: ${result.basic.comment_lines.toLocaleString()}</p>
     </div>
-    ${quality ? `
+    ${
+        quality
+            ? `
     <div class="metric ${this.getQualityClass(quality.overall_quality_score)}">
         <h3>🎯 Quality Metrics</h3>
         <p>Overall Score: ${quality.overall_quality_score.toFixed(1)}%</p>
@@ -339,7 +345,9 @@ export class HowManyService {
         <p>Documentation: ${quality.documentation_score.toFixed(1)}%</p>
         <p>Readability: ${quality.readability_score.toFixed(1)}%</p>
     </div>
-    ` : ''}
+    `
+            : ''
+    }
 
 </body>
 </html>`;
@@ -356,7 +364,7 @@ export class HowManyService {
             ['Code Lines', result.basic.code_lines.toString()],
             ['Comment Lines', result.basic.comment_lines.toString()],
             ['Documentation Lines', result.basic.doc_lines.toString()],
-            ['Blank Lines', result.basic.blank_lines.toString()]
+            ['Blank Lines', result.basic.blank_lines.toString()],
         ];
 
         const quality = result.ratios?.quality_metrics;
@@ -369,8 +377,6 @@ export class HowManyService {
             );
         }
 
-
-
         return rows.map(row => row.join(',')).join('\n');
     }
 
@@ -382,4 +388,4 @@ export class HowManyService {
         if (score >= 65) return 'quality-warning';
         return 'quality-danger';
     }
-} 
+}

@@ -3,8 +3,10 @@ import { HowManyResult } from '../types/HowManyTypes';
 import { Icons } from '../icons/icons';
 
 export class HowManyViewProvider implements vscode.TreeDataProvider<HowManyItem> {
-    private _onDidChangeTreeData: vscode.EventEmitter<HowManyItem | undefined | null | void> = new vscode.EventEmitter<HowManyItem | undefined | null | void>();
-    readonly onDidChangeTreeData: vscode.Event<HowManyItem | undefined | null | void> = this._onDidChangeTreeData.event;
+    private _onDidChangeTreeData: vscode.EventEmitter<HowManyItem | undefined | null | void> =
+        new vscode.EventEmitter<HowManyItem | undefined | null | void>();
+    readonly onDidChangeTreeData: vscode.Event<HowManyItem | undefined | null | void> =
+        this._onDidChangeTreeData.event;
 
     private result: HowManyResult | null = null;
     private isAnalyzing = false;
@@ -57,7 +59,7 @@ export class HowManyViewProvider implements vscode.TreeDataProvider<HowManyItem>
                     vscode.TreeItemCollapsibleState.None,
                     'analyzing',
                     'loading~spin'
-                )
+                ),
             ];
         }
 
@@ -69,7 +71,7 @@ export class HowManyViewProvider implements vscode.TreeDataProvider<HowManyItem>
                     vscode.TreeItemCollapsibleState.None,
                     'empty',
                     'info'
-                )
+                ),
             ];
         }
 
@@ -78,7 +80,7 @@ export class HowManyViewProvider implements vscode.TreeDataProvider<HowManyItem>
         // Quick overview - always visible and compact
         const fileCount = this.result.basic.total_files.toLocaleString();
         const lineCount = this.result.basic.total_lines.toLocaleString();
-        
+
         items.push(
             new HowManyItem(
                 `${fileCount} files`,
@@ -108,13 +110,15 @@ export class HowManyViewProvider implements vscode.TreeDataProvider<HowManyItem>
 
         // Top languages
         const topLanguages = Object.entries(this.result.basic.stats_by_extension)
-            .sort(([,a], [,b]) => b.total_lines - a.total_lines)
+            .sort(([, a], [, b]) => b.total_lines - a.total_lines)
             .slice(0, 3);
 
         if (topLanguages.length > 0) {
             const topLang = topLanguages[0];
-            const percentage = Math.round((topLang[1].total_lines / this.result.basic.total_lines) * 100);
-            
+            const percentage = Math.round(
+                (topLang[1].total_lines / this.result.basic.total_lines) * 100
+            );
+
             items.push(
                 new HowManyItem(
                     `${topLang[0].toUpperCase()} ${percentage}%`,
@@ -156,7 +160,7 @@ export class HowManyViewProvider implements vscode.TreeDataProvider<HowManyItem>
                 `Average ${this.formatSize(this.result.basic.average_file_size)} per file`,
                 vscode.TreeItemCollapsibleState.None,
                 'detail'
-            )
+            ),
         ];
     }
 
@@ -182,7 +186,7 @@ export class HowManyViewProvider implements vscode.TreeDataProvider<HowManyItem>
                 'Code readability score',
                 vscode.TreeItemCollapsibleState.None,
                 'detail'
-            )
+            ),
         ];
     }
 
@@ -190,11 +194,13 @@ export class HowManyViewProvider implements vscode.TreeDataProvider<HowManyItem>
         if (!this.result) return [];
 
         const languages = Object.entries(this.result.basic.stats_by_extension)
-            .sort(([,a], [,b]) => b.total_lines - a.total_lines)
+            .sort(([, a], [, b]) => b.total_lines - a.total_lines)
             .slice(0, 5);
 
         return languages.map(([ext, stats]) => {
-            const percentage = Math.round((stats.total_lines / this.result!.basic.total_lines) * 100);
+            const percentage = Math.round(
+                (stats.total_lines / this.result!.basic.total_lines) * 100
+            );
             return new HowManyItem(
                 `${ext.toUpperCase()}`,
                 `${stats.total_lines.toLocaleString()} lines (${percentage}%)`,
@@ -235,16 +241,23 @@ export class HowManyItem extends vscode.TreeItem {
 
         // Set icon based on iconName
         if (iconName) {
-            this.iconPath = new vscode.ThemeIcon(iconName, colorTheme ? new vscode.ThemeColor(`charts.${colorTheme}`) : undefined);
+            this.iconPath = new vscode.ThemeIcon(
+                iconName,
+                colorTheme ? new vscode.ThemeColor(`charts.${colorTheme}`) : undefined
+            );
         }
 
         // Add commands for clickable items
-        if (contextValue === 'overview' || contextValue === 'quality' || contextValue === 'languages') {
+        if (
+            contextValue === 'overview' ||
+            contextValue === 'quality' ||
+            contextValue === 'languages'
+        ) {
             this.command = {
                 command: 'howmany.showReport',
                 title: 'Show Detailed Report',
-                arguments: [this]
+                arguments: [this],
             };
         }
     }
-} 
+}

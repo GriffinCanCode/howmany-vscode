@@ -112,4 +112,4 @@ export function inlineIcon(iconName: keyof typeof Icons, size = 16): string {
     return Icons[iconName]
         .replace('width="16"', `width="${size}"`)
         .replace('height="16"', `height="${size}"`);
-} 
+}

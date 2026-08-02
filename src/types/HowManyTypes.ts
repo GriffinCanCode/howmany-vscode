@@ -296,7 +296,7 @@ export interface ExtensionConfig {
     ignorePatterns: string[];
     /** Default sorting criteria */
     sortBy: SortCriteria;
-    
+
     // New filtering options
     /** Use CLI mode for faster analysis */
     useCliMode: boolean;
@@ -317,7 +317,7 @@ export interface ExtensionConfig {
     showQuality: boolean;
     showRatios: boolean;
     showSize: boolean;
-    
+
     /** Legacy notification setting (deprecated) */
     showNotifications: boolean;
     /** Status bar configuration */
@@ -391,4 +391,4 @@ export function toLegacyResult(result: HowManyResult, analysisPath: string): Leg
  */
 export interface QuickPickItemWithAction extends vscode.QuickPickItem {
     action?: string;
-} 
+}

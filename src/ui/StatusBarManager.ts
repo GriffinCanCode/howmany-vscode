@@ -66,7 +66,7 @@ export class StatusBarManager implements vscode.Disposable {
         const text = this.formatDisplayText(result);
         const color = this.getDisplayColor(result);
         const icon = this.config.statusBar.showIcon ? `${this.HOWMANY_ICON} ` : '';
-        
+
         this.statusBarItem.text = `${icon}${text}`;
         this.statusBarItem.color = color;
         this.statusBarItem.tooltip = this.buildTooltip(result);
@@ -141,29 +141,32 @@ export class StatusBarManager implements vscode.Disposable {
                 if (smartQuality) {
                     const qualityScore = smartQuality.overall_quality_score;
                     const docScore = smartQuality.documentation_score;
-                    
+
                     // Prioritize quality warnings
                     if (qualityScore < this.config.analysis.qualityThresholds.overall) {
                         const score = Math.round(qualityScore);
                         return `${prefix} ${score}% quality`;
                     }
-                    
+
                     // Show documentation issues if critical
                     if (docScore < this.config.analysis.qualityThresholds.documentation) {
                         const score = Math.round(docScore);
                         return `${prefix} ${score}% docs`;
                     }
                 }
-                
-                // Fall through to auto logic for normal cases
-                // eslint-disable-next-line no-fallthrough
+
+            // Fall through to auto logic for normal cases
+            // eslint-disable-next-line no-fallthrough
             case 'auto':
                 // Intelligent selection based on project characteristics
                 if (result.basic.total_files > 1000) {
                     // Large projects: show file count
                     value = result.basic.total_files;
                     unit = 'files';
-                } else if (result.ratios?.quality_metrics && result.ratios.quality_metrics.overall_quality_score < 70) {
+                } else if (
+                    result.ratios?.quality_metrics &&
+                    result.ratios.quality_metrics.overall_quality_score < 70
+                ) {
                     // Poor quality: highlight quality score
                     const score = Math.round(result.ratios.quality_metrics.overall_quality_score);
                     return `${prefix} ${score}% quality`;
@@ -197,7 +200,9 @@ export class StatusBarManager implements vscode.Disposable {
                 }
                 if (value >= 1000) {
                     const thousands = value / 1000;
-                    return thousands >= 10 ? `${Math.round(thousands)}K` : `${thousands.toFixed(1)}K`;
+                    return thousands >= 10
+                        ? `${Math.round(thousands)}K`
+                        : `${thousands.toFixed(1)}K`;
                 }
                 return value.toString();
             default: // 'abbreviated' - balanced between readability and compactness
@@ -240,20 +245,30 @@ export class StatusBarManager implements vscode.Disposable {
         const lines = ['HowMany Analysis'];
 
         // Essential metrics only
-        lines.push(`${result.basic.total_files} files, ${this.formatNumber(result.basic.total_lines, 'abbreviated')} lines`);
+        lines.push(
+            `${result.basic.total_files} files, ${this.formatNumber(result.basic.total_lines, 'abbreviated')} lines`
+        );
 
         // Quality score if available (most important metric)
         const quality = result.ratios?.quality_metrics;
         if (quality) {
             const score = Math.round(quality.overall_quality_score);
-            const qualityText = score >= 80 ? 'Excellent' : score >= 65 ? 'Good' : score >= 50 ? 'Fair' : 'Needs Work';
+            const qualityText =
+                score >= 80
+                    ? 'Excellent'
+                    : score >= 65
+                      ? 'Good'
+                      : score >= 50
+                        ? 'Fair'
+                        : 'Needs Work';
             lines.push(`Quality: ${score}% (${qualityText})`);
         }
 
         // Top language only
-        const topLanguages = Object.entries(result.basic.stats_by_extension)
-            .sort(([,a], [,b]) => b.total_lines - a.total_lines);
-        
+        const topLanguages = Object.entries(result.basic.stats_by_extension).sort(
+            ([, a], [, b]) => b.total_lines - a.total_lines
+        );
+
         if (topLanguages.length > 0) {
             const [topExt, topData] = topLanguages[0];
             const percentage = Math.round((topData.total_lines / result.basic.total_lines) * 100);
@@ -270,4 +285,4 @@ export class StatusBarManager implements vscode.Disposable {
     dispose(): void {
         this.statusBarItem.dispose();
     }
-} 
+}

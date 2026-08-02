@@ -17,19 +17,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     // Load configuration
     const config = loadConfiguration();
-    
+
     // Initialize services
     service = new HowManyService(config);
     statusBar = new StatusBarManager(config);
     statusBar.initialize();
-    
+
     // Initialize tree view provider
     viewProvider = new HowManyViewProvider();
     const treeView = vscode.window.createTreeView('howmanyExplorer', {
         treeDataProvider: viewProvider,
-        showCollapseAll: false
+        showCollapseAll: false,
     });
-    
+
     // Add refresh command to tree view
     vscode.commands.registerCommand('howmany.refreshView', () => {
         refreshAnalysis();
@@ -44,18 +44,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 console.log('Auto-analyzing workspace on startup...');
                 statusBar.showAnalyzing();
                 viewProvider.setAnalyzing(true);
-                
+
                 const result = await service.analyzeWorkspace(workspaceFolder.uri.fsPath);
                 if (result) {
                     statusBar.updateWithResult(result);
                     viewProvider.updateResult(result);
-                    
+
                     // Update the report panel if it's currently open
                     const extension = vscode.extensions.getExtension('GriffinCanCode.howmany');
                     if (HowManyReportPanel.isOpen()) {
                         HowManyReportPanel.createOrShow(result, extension?.extensionUri);
                     }
-                    
+
                     console.log('✅ Auto-analysis completed');
                 }
             } catch (error) {
@@ -74,7 +74,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         vscode.commands.registerCommand('howmany.exportReport', exportReport),
         vscode.commands.registerCommand('howmany.refreshAnalysis', refreshAnalysis),
         vscode.commands.registerCommand('howmany.showQuickActions', showQuickActions),
-        vscode.commands.registerCommand('howmany.openSettings', openSettings)
+        vscode.commands.registerCommand('howmany.openSettings', openSettings),
     ];
 
     // Register configuration change listener
@@ -105,7 +105,7 @@ export function deactivate(): void {
  */
 function loadConfiguration(): ExtensionConfig {
     const config = vscode.workspace.getConfiguration('howmany');
-    
+
     return {
         binaryPath: config.get('binaryPath', 'howmany'),
         autoAnalyze: config.get('autoAnalyze', true),
@@ -114,7 +114,7 @@ function loadConfiguration(): ExtensionConfig {
         extensions: config.get('extensions', []),
         ignorePatterns: config.get('ignorePatterns', ['node_modules', 'target', 'dist', '.git']),
         sortBy: config.get('sortBy', 'lines'),
-        
+
         // New filtering options
         useCliMode: config.get('useCliMode', false),
         minLines: config.get('minLines'),
@@ -127,19 +127,19 @@ function loadConfiguration(): ExtensionConfig {
         showQuality: config.get('showQuality', false),
         showRatios: config.get('showRatios', false),
         showSize: config.get('showSize', false),
-        
+
         showNotifications: config.get('showNotifications', true),
         statusBar: {
             display: config.get('statusBar.display', 'auto'),
             format: config.get('statusBar.format', 'abbreviated'),
             showQualityColor: config.get('statusBar.showQualityColor', true),
             showIcon: config.get('statusBar.showIcon', true),
-            clickAction: config.get('statusBar.clickAction', 'quickActions')
+            clickAction: config.get('statusBar.clickAction', 'quickActions'),
         },
         webview: {
             theme: config.get('webview.theme', 'auto'),
             animations: config.get('webview.animations', true),
-            autoRefresh: config.get('webview.autoRefresh', false)
+            autoRefresh: config.get('webview.autoRefresh', false),
         },
         analysis: {
             smartSuggestions: config.get('analysis.smartSuggestions', true),
@@ -147,20 +147,20 @@ function loadConfiguration(): ExtensionConfig {
                 overall: 70,
                 maintainability: 65,
                 documentation: 20,
-                complexity: 10
-            })
+                complexity: 10,
+            }),
         },
         notifications: {
             showCompletion: config.get('notifications.showCompletion', true),
             showErrors: config.get('notifications.showErrors', true),
-            showQualityWarnings: config.get('notifications.showQualityWarnings', true)
+            showQualityWarnings: config.get('notifications.showQualityWarnings', true),
         },
         qualityThresholds: config.get('qualityThresholds', {
             overall: 70,
             maintainability: 65,
             documentation: 20,
-            complexity: 10
-        })
+            complexity: 10,
+        }),
     };
 }
 
@@ -177,23 +177,22 @@ async function analyzeWorkspace(): Promise<void> {
     try {
         statusBar.showAnalyzing();
         viewProvider.setAnalyzing(true);
-        
+
         const result = await service.analyzeWorkspace(workspaceFolder.uri.fsPath);
-        
+
         if (result) {
             statusBar.updateWithResult(result);
             viewProvider.updateResult(result);
-            
+
             // Automatically open the report
             const extension = vscode.extensions.getExtension('GriffinCanCode.howmany');
             HowManyReportPanel.createOrShow(result, extension?.extensionUri);
-            
+
             if (loadConfiguration().showNotifications) {
                 const message = `Analysis complete: ${result.basic.total_files} files, ${formatNumber(result.basic.total_lines)} lines`;
                 vscode.window.showInformationMessage(message);
             }
         }
-        
     } catch (error) {
         statusBar.showError();
         viewProvider.setAnalyzing(false);
@@ -218,11 +217,11 @@ async function analyzeCurrentFile(): Promise<void> {
         if (result) {
             statusBar.updateWithResult(result);
             viewProvider.updateResult(result);
-            
+
             // Automatically open the report
             const extension = vscode.extensions.getExtension('GriffinCanCode.howmany');
             HowManyReportPanel.createOrShow(result, extension?.extensionUri);
-            
+
             if (loadConfiguration().showNotifications) {
                 const message = `Analysis complete for ${editor.document.fileName}: ${result.basic.total_lines} lines`;
                 vscode.window.showInformationMessage(message);
@@ -269,10 +268,10 @@ async function exportReport(): Promise<void> {
     const uri = await vscode.window.showSaveDialog({
         saveLabel: 'Export Report',
         filters: {
-            'JSON': ['json'],
-            'HTML': ['html'],
-            'CSV': ['csv']
-        }
+            JSON: ['json'],
+            HTML: ['html'],
+            CSV: ['csv'],
+        },
     });
 
     if (uri) {
@@ -297,7 +296,7 @@ async function refreshAnalysis(): Promise<void> {
  */
 async function showQuickActions(): Promise<void> {
     const actions = getAvailableActions();
-    
+
     if (actions.length === 0) {
         vscode.window.showInformationMessage('No actions available at this time.');
         return;
@@ -311,7 +310,7 @@ async function showQuickActions(): Promise<void> {
         placeHolder: 'Choose a HowMany action',
         title: 'HowMany Code Analysis',
         matchOnDescription: true,
-        matchOnDetail: true
+        matchOnDetail: true,
     });
 
     if (selected && selected.action) {
@@ -325,10 +324,11 @@ async function showQuickActions(): Promise<void> {
 function getAvailableActions(): QuickAction[] {
     const hasResults = service.getLastResult() !== null;
     const isAnalyzing = service.isRunning();
-    const hasWorkspace = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0;
+    const hasWorkspace =
+        vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0;
     const hasActiveFile = vscode.window.activeTextEditor !== undefined;
     const result = service.getLastResult();
-    
+
     const actions: QuickAction[] = [];
 
     // Analysis Actions
@@ -338,8 +338,10 @@ function getAvailableActions(): QuickAction[] {
             label: 'Analyze Workspace',
             icon: 'graph',
             enabled: !isAnalyzing,
-            description: isAnalyzing ? 'Analysis in progress...' : 'Run comprehensive workspace analysis',
-            category: 'analysis'
+            description: isAnalyzing
+                ? 'Analysis in progress...'
+                : 'Run comprehensive workspace analysis',
+            category: 'analysis',
         });
     }
 
@@ -349,8 +351,10 @@ function getAvailableActions(): QuickAction[] {
             label: 'Analyze Current File',
             icon: 'file-code',
             enabled: !isAnalyzing,
-            description: isAnalyzing ? 'Analysis in progress...' : 'Analyze the currently open file',
-            category: 'analysis'
+            description: isAnalyzing
+                ? 'Analysis in progress...'
+                : 'Analyze the currently open file',
+            category: 'analysis',
         });
     }
 
@@ -363,7 +367,7 @@ function getAvailableActions(): QuickAction[] {
                 icon: 'report',
                 enabled: true,
                 description: 'View detailed analysis results in webview',
-                category: 'results'
+                category: 'results',
             },
             {
                 id: 'exportReport',
@@ -371,7 +375,7 @@ function getAvailableActions(): QuickAction[] {
                 icon: 'export',
                 enabled: true,
                 description: 'Save report as JSON, HTML, or CSV',
-                category: 'results'
+                category: 'results',
             }
         );
 
@@ -385,7 +389,7 @@ function getAvailableActions(): QuickAction[] {
                 icon: 'refresh',
                 enabled: true,
                 description: timeAgo ? `Re-run analysis (last: ${timeAgo})` : 'Re-run analysis',
-                category: 'results'
+                category: 'results',
             });
         }
     }
@@ -397,7 +401,7 @@ function getAvailableActions(): QuickAction[] {
         icon: 'settings-gear',
         enabled: true,
         description: 'Configure HowMany extension preferences',
-        category: 'config'
+        category: 'config',
     });
 
     // Smart suggestions based on results
@@ -410,7 +414,7 @@ function getAvailableActions(): QuickAction[] {
                 icon: 'warning',
                 enabled: true,
                 description: `Quality score is low (${Math.round(quality.overall_quality_score)}%) - review details`,
-                category: 'suggestions'
+                category: 'suggestions',
             });
         }
 
@@ -421,7 +425,7 @@ function getAvailableActions(): QuickAction[] {
                 icon: 'book',
                 enabled: true,
                 description: `Documentation coverage is low (${Math.round(quality.documentation_score)}%)`,
-                category: 'suggestions'
+                category: 'suggestions',
             });
         }
     }
@@ -434,7 +438,7 @@ function getAvailableActions(): QuickAction[] {
  */
 function groupActionsByCategory(actions: QuickAction[]): Record<string, QuickAction[]> {
     const groups: Record<string, QuickAction[]> = {};
-    
+
     actions.forEach(action => {
         const category = action.category || 'other';
         if (!groups[category]) {
@@ -449,34 +453,36 @@ function groupActionsByCategory(actions: QuickAction[]): Record<string, QuickAct
 /**
  * Create quick pick items with proper grouping and separators
  */
-function createQuickPickItems(groupedActions: Record<string, QuickAction[]>): (vscode.QuickPickItem & { action?: string })[] {
+function createQuickPickItems(
+    groupedActions: Record<string, QuickAction[]>
+): (vscode.QuickPickItem & { action?: string })[] {
     const items: (vscode.QuickPickItem & { action?: string })[] = [];
-    
+
     const categoryOrder = ['analysis', 'results', 'suggestions', 'config'];
     const categoryLabels: Record<string, string> = {
-        'analysis': 'Analysis',
-        'results': 'Results',
-        'suggestions': 'Suggestions',
-        'config': 'Configuration'
+        analysis: 'Analysis',
+        results: 'Results',
+        suggestions: 'Suggestions',
+        config: 'Configuration',
     };
 
     let isFirst = true;
-    
+
     categoryOrder.forEach(category => {
         if (groupedActions[category] && groupedActions[category].length > 0) {
             // Add separator (except for first category)
             if (!isFirst) {
                 items.push({
                     label: '',
-                    kind: vscode.QuickPickItemKind.Separator
+                    kind: vscode.QuickPickItemKind.Separator,
                 });
             }
-            
+
             // Add category header if there are multiple categories
             if (Object.keys(groupedActions).length > 1) {
                 items.push({
                     label: categoryLabels[category] || category.toUpperCase(),
-                    kind: vscode.QuickPickItemKind.Separator
+                    kind: vscode.QuickPickItemKind.Separator,
                 });
             }
 
@@ -485,10 +491,10 @@ function createQuickPickItems(groupedActions: Record<string, QuickAction[]>): (v
                 items.push({
                     label: `$(${action.icon}) ${action.label}`,
                     description: action.description,
-                    action: action.id
+                    action: action.id,
                 });
             });
-            
+
             isFirst = false;
         }
     });
@@ -527,4 +533,4 @@ function formatNumber(value: number): string {
     if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
     if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
     return value.toString();
-} 
+}

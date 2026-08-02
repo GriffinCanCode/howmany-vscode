@@ -9,12 +9,16 @@ export class HowManyReportPanel {
     private disposables: vscode.Disposable[] = [];
     private result: HowManyResult;
 
-    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, result: HowManyResult) {
+    private constructor(
+        panel: vscode.WebviewPanel,
+        extensionUri: vscode.Uri,
+        result: HowManyResult
+    ) {
         this.panel = panel;
         this.extensionUri = extensionUri;
         this.result = result;
         this.update(result);
-        
+
         this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
     }
 
@@ -37,14 +41,19 @@ export class HowManyReportPanel {
                 enableScripts: true,
                 retainContextWhenHidden: true,
                 localResourceRoots: [
-                    vscode.Uri.joinPath(extensionUri || vscode.extensions.getExtension('GriffinCanCode.howmany')?.extensionUri!, 'src', 'styles')
-                ]
+                    vscode.Uri.joinPath(
+                        extensionUri ||
+                            vscode.extensions.getExtension('GriffinCanCode.howmany')?.extensionUri!,
+                        'src',
+                        'styles'
+                    ),
+                ],
             }
         );
 
         HowManyReportPanel.currentPanel = new HowManyReportPanel(
-            panel, 
-            extensionUri || vscode.extensions.getExtension('GriffinCanCode.howmany')?.extensionUri!, 
+            panel,
+            extensionUri || vscode.extensions.getExtension('GriffinCanCode.howmany')?.extensionUri!,
             result
         );
     }
@@ -61,8 +70,6 @@ export class HowManyReportPanel {
         this.result = result;
         this.panel.webview.html = this.getWebviewContent(result);
     }
-
-
 
     private getWebviewContent(result: HowManyResult): string {
         // Get CSS file URI
@@ -191,7 +198,7 @@ export class HowManyReportPanel {
 
     private generateLanguagesCard(result: HowManyResult): string {
         const topLanguages = Object.entries(result.basic.stats_by_extension)
-            .sort(([,a], [,b]) => b.total_lines - a.total_lines)
+            .sort(([, a], [, b]) => b.total_lines - a.total_lines)
             .slice(0, 8);
 
         return `
@@ -201,19 +208,21 @@ export class HowManyReportPanel {
                     <h2 class="card-title" id="languages-title">Languages</h2>
                 </header>
                 <ul class="languages-list" role="list">
-                    ${topLanguages.map(([ext, data]) => `
+                    ${topLanguages
+                        .map(
+                            ([ext, data]) => `
                         <li class="language-item" role="listitem">
                             <span class="language-name">${ext.toUpperCase()}</span>
                             <span class="language-stats">
                                 ${data.file_count} files • ${data.total_lines.toLocaleString()} lines
                             </span>
                         </li>
-                    `).join('')}
+                    `
+                        )
+                        .join('')}
                 </ul>
             </section>`;
     }
-
-
 
     private getQualityClass(score: number): string {
         if (score >= 85) return 'quality-excellent';
@@ -225,7 +234,7 @@ export class HowManyReportPanel {
     private formatHours(hours: number): string {
         const days = Math.floor(hours / 8);
         const remainingHours = Math.round(hours % 8);
-        
+
         if (days > 0) {
             return `${days}d ${remainingHours}h`;
         }
@@ -244,7 +253,7 @@ export class HowManyReportPanel {
     private dispose(): void {
         HowManyReportPanel.currentPanel = undefined;
         this.panel.dispose();
-        
+
         while (this.disposables.length) {
             const disposable = this.disposables.pop();
             if (disposable) {
@@ -252,4 +261,4 @@ export class HowManyReportPanel {
             }
         }
     }
-} 
+}
