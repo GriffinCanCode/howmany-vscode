@@ -29,7 +29,7 @@ dist/test/**
 .nvmrc
 
 # Lint and format config
-**/.eslintrc.json
+eslint.config.js
 .eslintcache
 .prettierrc.json
 .prettierignore
@@ -38,14 +38,12 @@ dist/test/**
 **/.nyc_output
 **/coverage/**
 test-project/**
-verify-marketplace-ready.js
+tools/**
 
 # Contributor docs (README, CHANGELOG, and LICENSE are shown on the
 # marketplace listing and must stay in the package).
 CONTRIBUTING.md
-TESTING.md
-STRUCTURE.md
-MARKETPLACE.md
+docs/**
 vsc-extension-quickstart.md
 
 # Previously built packages
