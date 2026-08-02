@@ -29,7 +29,7 @@ Thank you for your interest in contributing to the HowMany VS Code Extension! Th
 3. **Install HowMany CLI**
    ```bash
    # Using Homebrew (recommended)
-   brew install howmany
+   brew install GriffinCanCode/howmany/howmany
    
    # Or using Cargo
    cargo install howmany

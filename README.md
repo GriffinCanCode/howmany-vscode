@@ -33,7 +33,7 @@ A VS Code extension that integrates with the [HowMany](https://github.com/Griffi
 2. Install the HowMany CLI:
    ```bash
    # Using Homebrew (macOS/Linux)
-   brew install howmany
+   brew install GriffinCanCode/howmany/howmany
    
    # Using Cargo
    cargo install howmany
