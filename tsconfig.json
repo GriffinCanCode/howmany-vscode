@@ -1,10 +1,16 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    // The extension host loads `dist/extension.js` with `require`, so emit and
+    // resolution both have to model CommonJS under a real Node.
+    "module": "node16",
+    "moduleResolution": "node16",
     "target": "ES2020",
     "outDir": "dist",
     "rootDir": "src",
     "lib": ["ES2020"],
+    // Only these two packages contribute globals; enumerating them keeps the
+    // rest of node_modules/@types out of the program.
+    "types": ["node", "mocha"],
     "sourceMap": true,
     "strict": true,
     "esModuleInterop": true,
@@ -12,9 +18,7 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "declaration": true,
-    "declarationMap": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "declarationMap": true
   },
   "include": [
     "src/**/*"

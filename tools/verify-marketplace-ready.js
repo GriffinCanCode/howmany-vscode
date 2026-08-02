@@ -86,7 +86,7 @@ console.log('\n🏗️ Build System');
 console.log('-'.repeat(30));
 
 check('TypeScript config exists', fs.existsSync('tsconfig.json'));
-check('ESLint config exists', fs.existsSync('.eslintrc.json'));
+check('ESLint config exists', fs.existsSync('eslint.config.js'));
 check('Prettier config exists', fs.existsSync('.prettierrc.json'));
 check('VS Code ignore file exists', fs.existsSync('.vscodeignore'));
 
