@@ -1,0 +1,77 @@
+name: Bug report
+description: The extension fails or behaves differently than documented.
+labels: ["bug", "triage"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Extension version
+      description: Shown on the extension page in the Marketplace sidebar.
+      placeholder: "2.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: vscode
+    attributes:
+      label: VS Code version
+      description: Help > About (or Code > About Visual Studio Code on macOS).
+      placeholder: "1.85.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Linux
+        - Windows
+        - Remote / WSL / Codespaces
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a folder containing ...
+        2. Run the command "HowMany: ..."
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected to happen
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output and errors
+      description: >
+        Paste the "HowMany" channel from the Output panel, plus anything red in
+        Help > Toggle Developer Tools > Console. **Redact private paths.**
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for a duplicate.
+          required: true
+        - label: I reproduced this with other extensions disabled.
+          required: false

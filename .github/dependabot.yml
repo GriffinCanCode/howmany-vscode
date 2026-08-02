@@ -1,0 +1,38 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+    ignore:
+      # @types/vscode is the engine floor declared in package.json, not a
+      # dependency to track upward. Raising it drops support for older editors,
+      # so it stays a deliberate manual decision.
+      - dependency-name: "@types/vscode"
+    groups:
+      dev-tooling:
+        dependency-type: development
+        patterns:
+          - "*"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns:
+          - "*"

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question about the howmany CLI itself
+    url: https://github.com/GriffinCanCode/howmany/issues
+    about: Analysis results, language support, and metrics live in the core repo.
+  - name: Security vulnerability
+    url: https://github.com/GriffinCanCode/howmany-vscode/security/advisories/new
+    about: Report security issues privately, never in a public issue.
