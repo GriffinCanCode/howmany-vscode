@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "editorconfig.editorconfig",
+    "connor4312.esbuild-problem-matchers",
+    "ms-vscode.extension-test-runner",
+    "github.vscode-github-actions"
+  ]
+}

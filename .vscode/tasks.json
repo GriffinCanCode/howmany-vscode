@@ -1,0 +1,49 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "watch",
+      "label": "npm: watch",
+      "problemMatcher": "$tsc-watch",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "never",
+        "group": "build"
+      },
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "type": "npm",
+      "script": "compile",
+      "label": "npm: compile",
+      "problemMatcher": "$tsc",
+      "group": "build"
+    },
+    {
+      "type": "npm",
+      "script": "pretest",
+      "label": "npm: pretest",
+      "problemMatcher": "$tsc",
+      "presentation": { "reveal": "silent" }
+    },
+    {
+      "type": "npm",
+      "script": "lint",
+      "label": "npm: lint",
+      "problemMatcher": "$eslint-stylish"
+    },
+    {
+      "type": "npm",
+      "script": "format",
+      "label": "npm: format",
+      "problemMatcher": []
+    },
+    {
+      "type": "npm",
+      "script": "package",
+      "label": "npm: package (vsix)",
+      "problemMatcher": []
+    }
+  ]
+}
