@@ -1,0 +1,10 @@
+node_modules/
+dist/
+out/
+coverage/
+.vscode-test/
+test-project/
+package-lock.json
+*.vsix
+*.tsbuildinfo
+CHANGELOG.md
