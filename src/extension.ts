@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { HowManyService } from './services/HowManyService';
+import { LiveCounts } from './services/LiveCounts';
 import { HowManyReportPanel } from './panels/HowManyReportPanel';
 import { StatusBarManager } from './ui/StatusBarManager';
 import { HowManyViewProvider } from './ui/HowManyViewProvider';
@@ -10,6 +11,7 @@ let service: HowManyService;
 let statusBar: StatusBarManager;
 let viewProvider: HowManyViewProvider;
 let treeView: vscode.TreeView<unknown> | undefined;
+let liveCounts: LiveCounts;
 
 /** Keeps the sidebar header, status bar, tree and report on one shared state. */
 function publishResult(result: HowManyResult, scope: string, reveal: boolean): void {
@@ -100,6 +102,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         vscode.commands.registerCommand('howmany.openSettings', openSettings),
     ];
 
+    // The per-file line breakdown, served by the CLI so the lens and the report
+    // are counted by the same code. Not awaited: a slow or missing binary must
+    // not hold up the parts of the extension that do not depend on it.
+    liveCounts = new LiveCounts();
+    void liveCounts.start();
+
     // Register configuration change listener
     const configChangeListener = vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('howmany')) {
@@ -107,10 +115,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             statusBar.updateConfig(newConfig);
             // Note: Service config updates could be added here if needed
         }
+        // The server is launched from the binary path and reads its thresholds
+        // once at startup, so either has to be picked up by restarting it.
+        if (
+            event.affectsConfiguration('howmany.binaryPath') ||
+            event.affectsConfiguration('howmany.liveCounts')
+        ) {
+            void liveCounts.restart();
+        }
     });
 
     commands.forEach(cmd => context.subscriptions.push(cmd));
-    context.subscriptions.push(statusBar, configChangeListener);
+    context.subscriptions.push(statusBar, configChangeListener, liveCounts);
 
     console.log('✅ HowMany extension activated');
 }
@@ -118,9 +134,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 /**
  * Extension deactivation
  */
-export function deactivate(): void {
+export async function deactivate(): Promise<void> {
     console.log('👋 HowMany extension deactivating...');
     HowManyReportPanel.disposeAll();
+    // Awaited so the server process is gone before the host exits, rather than
+    // being left for the operating system to reap.
+    await liveCounts?.stop();
 }
 
 /**

@@ -30,6 +30,7 @@ dist/test/**
 
 # Lint and format config
 eslint.config.js
+esbuild.js
 .eslintcache
 .prettierrc.json
 .prettierignore

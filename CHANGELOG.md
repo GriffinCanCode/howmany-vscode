@@ -5,6 +5,28 @@ All notable changes to the HowMany VS Code Extension will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-08-05
+
+### Added
+- **Live line counts**: every file now carries its own breakdown above the first
+  line — `412 TypeScript · 305 code · 47 doc · 60 blank` — recounted as you
+  type. It reads the unsaved buffer, not the file on disk.
+- **Threshold warnings**: a file that runs past `max_file_lines`, or documents
+  less of itself than `min_doc_ratio` asks for, is reported in the problems
+  panel. Both are configured in `howmany.toml` and both are off at zero.
+- **`howmany.liveCounts`** setting to turn the above off without disabling the
+  rest of the extension.
+
+The counts come from a language server inside the CLI (`howmany lsp`), so what
+the lens says and what `howmany .` reports are produced by the same classifier
+and cannot disagree. Requires howmany 3.1 or later; with an older CLI the
+extension behaves exactly as it did before.
+
+### Changed
+- The extension is bundled with esbuild, so the published package stays a single
+  self-contained file now that it has a runtime dependency.
+- `howmany init` in the CLI installs and configures this extension for you.
+
 ## [1.0.0] - 2025-01-20
 
 ### 🎉 Major Release
