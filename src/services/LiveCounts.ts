@@ -39,7 +39,7 @@ export class LiveCounts implements vscode.Disposable {
             // to known languages would leave the lens off exactly the files
             // whose contents are hardest to guess at.
             documentSelector: [{ scheme: 'file' }],
-            outputChannel: vscode.window.createOutputChannel('HowMany'),
+            outputChannel: vscode.window.createOutputChannel('HowMany', { log: true }),
             // A missing binary is reported through the status bar the extension
             // already owns, not through a modal the user has to dismiss.
             revealOutputChannelOn: 4,
