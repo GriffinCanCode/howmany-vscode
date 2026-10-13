@@ -542,13 +542,13 @@
     "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^4.0.0",
     "esbuild": "^0.28.2",
-    "eslint": "^10.10.0",
-    "globals": "^17.12.0",
-    "mocha": "^12.0.2",
-    "prettier": "^3.9.8",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "mocha": "^12.0.3",
+    "prettier": "^3.9.9",
     "rimraf": "^6.1.3",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.70.0"
+    "typescript-eslint": "^8.71.1"
   },
   "dependencies": {
     "vscode-languageclient": "^10.1.2"
